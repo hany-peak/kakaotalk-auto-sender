@@ -1,5 +1,5 @@
 import type { MacroPagePlugin } from '../types';
-import { KakaoSendPage } from './KakaoSendPage';
+import { KakaoStandalonePage } from './KakaoStandalonePage';
 
 export const kakaoSendPlugin: MacroPagePlugin = {
   id: 'kakao-send',
@@ -7,6 +7,6 @@ export const kakaoSendPlugin: MacroPagePlugin = {
   icon: '💬',
   status: 'ready',
   description: '그룹 카톡방 이미지·문구 자동 전송',
-  Page: KakaoSendPage,
+  Page: KakaoStandalonePage,
   category: 'send',
 };
