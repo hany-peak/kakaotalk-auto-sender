@@ -1,0 +1,13 @@
+{
+  "name": "jeeves",
+  "version": "2.0.0",
+  "description": "CodeTax Macro App - Plugin Architecture",
+  "scripts": {
+    "dev": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "start": "cd server && npm start",
+    "build": "cd client && npm run build",
+    "install:browser": "npx playwright install chromium",
+    "postinstall": "cd server && npm install && cd ../client && npm install"
+  }
+}
