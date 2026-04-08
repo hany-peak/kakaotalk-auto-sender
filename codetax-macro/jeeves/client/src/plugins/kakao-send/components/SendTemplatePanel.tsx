@@ -24,10 +24,14 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
     catch { return []; }
   });
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editMessage, setEditMessage] = useState('');
+  const [editCard, setEditCard] = useState<{ name: string; url: string; path: string } | null>(null);
   const [tab, setTab] = useState<'template' | 'custom'>('template');
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [templateName, setTemplateName] = useState('');
+
 
   function saveTemplates(list: SendTemplate[]) {
     setTemplates(list);
@@ -35,6 +39,7 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
   }
 
   function selectTemplate(id: string) {
+    if (editingId) return; // don't switch while editing
     if (selectedTemplateId === id) {
       setSelectedTemplateId(null);
       return;
@@ -48,6 +53,49 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
     } else {
       onCardChange(null);
     }
+  }
+
+  function startEdit(id: string) {
+    const t = templates.find((t) => t.id === id);
+    if (!t) return;
+    setEditingId(id);
+    setEditName(t.name);
+    setEditMessage(t.message);
+    setEditCard(
+      t.cardImageUrl && t.cardImageName && t.cardImagePath
+        ? { name: t.cardImageName, url: t.cardImageUrl, path: t.cardImagePath }
+        : null,
+    );
+  }
+
+  function saveEdit() {
+    if (!editingId || !editName.trim()) return;
+    const updated = templates.map((t) =>
+      t.id === editingId
+        ? {
+            ...t,
+            name: editName.trim(),
+            message: editMessage,
+            cardImageUrl: editCard?.url || null,
+            cardImagePath: editCard?.path || null,
+            cardImageName: editCard?.name || null,
+          }
+        : t,
+    );
+    saveTemplates(updated);
+    // Apply to current selection
+    onMessageChange(editMessage);
+    onCardChange(editCard);
+    setSelectedTemplateId(editingId);
+    setEditingId(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  function removeEditCard() {
+    setEditCard(null);
   }
 
   function saveCurrentAsTemplate() {
@@ -66,47 +114,10 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
     setSelectedTemplateId(newTemplate.id);
   }
 
-  function editTemplate(id: string) {
-    const t = templates.find((t) => t.id === id);
-    if (!t) return;
-    // Load template content into the custom tab
-    onMessageChange(t.message);
-    if (t.cardImageUrl && t.cardImageName && t.cardImagePath) {
-      onCardChange({ name: t.cardImageName, url: t.cardImageUrl, path: t.cardImagePath });
-    } else {
-      onCardChange(null);
-    }
-    setEditingTemplateId(id);
-    setTab('custom');
-  }
-
-  function updateTemplate() {
-    if (!editingTemplateId) return;
-    const updated = templates.map((t) =>
-      t.id === editingTemplateId
-        ? {
-            ...t,
-            message: selectedMessage,
-            cardImageUrl: selectedCard?.url || null,
-            cardImagePath: selectedCard?.path || null,
-            cardImageName: selectedCard?.name || null,
-          }
-        : t,
-    );
-    saveTemplates(updated);
-    setSelectedTemplateId(editingTemplateId);
-    setEditingTemplateId(null);
-    setTab('template');
-  }
-
-  function cancelEdit() {
-    setEditingTemplateId(null);
-  }
-
   function deleteTemplate(id: string) {
     saveTemplates(templates.filter((t) => t.id !== id));
     if (selectedTemplateId === id) setSelectedTemplateId(null);
-    if (editingTemplateId === id) setEditingTemplateId(null);
+    if (editingId === id) setEditingId(null);
   }
 
   return (
@@ -149,48 +160,102 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {templates.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => selectTemplate(t.id)}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
-                    selectedTemplateId === t.id
-                      ? 'border-accent bg-accent/10'
-                      : 'border-border bg-surface2 hover:border-accent/50'
-                  }`}
-                >
-                  {/* Card image thumbnail */}
-                  {t.cardImageUrl ? (
-                    <img src={t.cardImageUrl} className="w-10 h-10 rounded-md object-cover border border-border shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-md bg-border flex items-center justify-center text-lg shrink-0">📝</div>
-                  )}
+              {templates.map((t) => {
+                const isEditing = editingId === t.id;
+                const isSelected = selectedTemplateId === t.id;
 
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold truncate">{t.name}</div>
-                    <div className="text-[11px] text-muted truncate">
-                      {t.message ? t.message.substring(0, 50) + (t.message.length > 50 ? '...' : '') : '(문구 없음)'}
-                      {t.cardImageName && ` · 🎴 ${t.cardImageName}`}
+                if (isEditing) {
+                  return (
+                    <div key={t.id} className="border border-accent bg-accent/5 rounded-lg p-4">
+                      {/* Edit: 제목 */}
+                      <div className="mb-3">
+                        <label className="text-[11px] text-muted block mb-1">제목</label>
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="w-full bg-surface2 border border-border rounded-md text-text px-2.5 py-1.5 text-[13px] outline-none"
+                        />
+                      </div>
+
+                      {/* Edit: 카드 이미지 */}
+                      <div className="mb-3">
+                        <label className="text-[11px] text-muted block mb-1">카드 이미지</label>
+                        {editCard ? (
+                          <div className="flex items-center gap-2">
+                            <img src={editCard.url} className="w-12 h-12 rounded-md object-cover border border-border" />
+                            <span className="text-[12px] text-muted flex-1 truncate">{editCard.name}</span>
+                            <button onClick={removeEditCard} className="text-danger text-xs">삭제</button>
+                          </div>
+                        ) : (
+                          <div className="text-[12px] text-muted">(카드 이미지 없음 — "직접 설정" 탭에서 업로드 후 다시 편집하세요)</div>
+                        )}
+                      </div>
+
+                      {/* Edit: 전송 문구 */}
+                      <div className="mb-3">
+                        <label className="text-[11px] text-muted block mb-1">전송 문구</label>
+                        <textarea
+                          value={editMessage}
+                          onChange={(e) => setEditMessage(e.target.value)}
+                          rows={5}
+                          className="w-full bg-surface2 border border-border rounded-md text-text px-2.5 py-2 text-[13px] outline-none resize-y font-[inherit] leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Edit: 버튼 */}
+                      <div className="flex gap-2">
+                        <button onClick={saveEdit} className="bg-accent text-white rounded-md px-4 py-1.5 text-xs font-medium hover:bg-accent/90">
+                          ✓ 저장
+                        </button>
+                        <button onClick={cancelEdit} className="text-muted text-xs hover:text-text">
+                          취소
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  );
+                }
 
-                  {selectedTemplateId === t.id && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); editTemplate(t.id); }}
-                      className="text-accent text-[11px] border border-accent rounded-md px-2 py-0.5 shrink-0 hover:bg-accent/10"
-                    >
-                      편집
-                    </button>
-                  )}
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteTemplate(t.id); }}
-                    className="text-muted hover:text-danger text-sm shrink-0 p-1"
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => selectTemplate(t.id)}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-all ${
+                      isSelected
+                        ? 'border-accent bg-accent/10'
+                        : 'border-border bg-surface2 hover:border-accent/50'
+                    }`}
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    {t.cardImageUrl ? (
+                      <img src={t.cardImageUrl} className="w-10 h-10 rounded-md object-cover border border-border shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-md bg-border flex items-center justify-center text-lg shrink-0">📝</div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold truncate">{t.name}</div>
+                      <div className="text-[11px] text-muted truncate">
+                        {t.message ? t.message.substring(0, 50) + (t.message.length > 50 ? '...' : '') : '(문구 없음)'}
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); startEdit(t.id); }}
+                        className="text-accent text-[11px] border border-accent rounded-md px-2 py-0.5 shrink-0 hover:bg-accent/10"
+                      >
+                        편집
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteTemplate(t.id); }}
+                      className="text-muted hover:text-danger text-sm shrink-0 p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -199,37 +264,18 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
       {/* Custom Tab */}
       {tab === 'custom' && (
         <div>
-          {/* Editing indicator */}
-          {editingTemplateId && (
-            <div className="flex items-center gap-2 mb-3 p-2.5 bg-accent/10 border border-accent/30 rounded-lg text-[13px]">
-              <span className="text-accent">✏️ "{templates.find((t) => t.id === editingTemplateId)?.name}" 템플릿 편집 중</span>
-              <button onClick={cancelEdit} className="text-muted text-xs ml-auto hover:text-text">편집 취소</button>
-            </div>
-          )}
-
           <MessagePanel
             selectedMessage={selectedMessage}
-            onSelect={(msg) => { onMessageChange(msg); if (!editingTemplateId) setSelectedTemplateId(null); }}
+            onSelect={(msg) => { onMessageChange(msg); setSelectedTemplateId(null); }}
           />
           <CardImagePanel
             selected={selectedCard}
-            onSelect={(card) => { onCardChange(card); if (!editingTemplateId) setSelectedTemplateId(null); }}
+            onSelect={(card) => { onCardChange(card); setSelectedTemplateId(null); }}
           />
 
-          {/* Save / Update actions */}
-          <div className="mt-3 pt-3 border-t border-border flex gap-2 items-center">
-            {editingTemplateId ? (
-              <>
-                <button
-                  onClick={updateTemplate}
-                  className="bg-accent text-white rounded-md px-3 py-1.5 text-xs font-medium hover:bg-accent/90"
-                >
-                  ✓ 템플릿 업데이트
-                </button>
-                <button onClick={cancelEdit} className="text-muted text-xs hover:text-text">취소</button>
-              </>
-            ) : showSaveForm ? (
-              <>
+          <div className="mt-3 pt-3 border-t border-border">
+            {showSaveForm ? (
+              <div className="flex gap-2 items-center">
                 <input
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
@@ -239,7 +285,7 @@ export function SendTemplatePanel({ selectedMessage, onMessageChange, selectedCa
                 />
                 <button onClick={saveCurrentAsTemplate} className="bg-accent text-white rounded-md px-3 py-1.5 text-xs font-medium">저장</button>
                 <button onClick={() => setShowSaveForm(false)} className="text-muted text-xs">취소</button>
-              </>
+              </div>
             ) : (
               <button
                 onClick={() => setShowSaveForm(true)}
