@@ -1,20 +1,13 @@
 import type { MacroPagePlugin } from './types';
+import { vatNoticePlugin } from './vat-notice';
 
-// Placeholder pages - will be replaced in Tasks 12-13
+// Placeholder for future plugins
 function PlaceholderPage() {
   return <div className="text-muted">Coming soon...</div>;
 }
 
 export const plugins: MacroPagePlugin[] = [
-  {
-    id: 'vat-notice',
-    name: '부가가치세 예정고지',
-    icon: '⚡',
-    status: 'ready',
-    description: 'Excel upload -> HomeTax auto-collection -> KakaoTalk send',
-    Page: PlaceholderPage,
-    badge: 'NEW',
-  },
+  vatNoticePlugin,
   {
     id: 'kakao-send',
     name: '카카오톡 전송',
