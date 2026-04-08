@@ -4,11 +4,12 @@ interface SendConfirmModalProps {
   targets: KakaoTarget[];
   message: string;
   cardImageName: string | null;
+  cardImageUrl: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function SendConfirmModal({ targets, message, cardImageName, onConfirm, onCancel }: SendConfirmModalProps) {
+export function SendConfirmModal({ targets, message, cardImageName, cardImageUrl, onConfirm, onCancel }: SendConfirmModalProps) {
   const withImg = targets.filter((t) => t.imageUrl).length;
   const noImg = targets.length - withImg;
 
@@ -40,7 +41,18 @@ export function SendConfirmModal({ targets, message, cardImageName, onConfirm, o
         )}
 
         {cardImageName && (
-          <div className="text-xs text-muted mb-3">Card image: <b>{cardImageName}</b></div>
+          <div className="flex items-center gap-3 p-2.5 bg-surface2 rounded-lg mb-3">
+            {cardImageUrl ? (
+              <img src={cardImageUrl} className="w-12 h-12 object-cover rounded-md border border-border" />
+            ) : (
+              <div className="w-12 h-12 bg-border rounded-md flex items-center justify-center text-xl">🎴</div>
+            )}
+            <div className="flex-1">
+              <div className="text-xs text-muted">대표 카드 이미지</div>
+              <div className="text-[13px] font-semibold">{cardImageName}</div>
+            </div>
+            <span className="text-success text-sm">✅</span>
+          </div>
         )}
 
         <div className="flex-1 overflow-y-auto max-h-[320px] mb-4">

@@ -197,6 +197,7 @@ export function KakaoSendPage({ folder }: KakaoSendPageProps = {}) {
           targets={targets.filter((t) => checkedKeys.has(t.bizNo.replace(/-/g, '')))}
           message={selectedMessage}
           cardImageName={selectedCard?.name || null}
+          cardImageUrl={selectedCard?.url || null}
           onConfirm={confirmSend}
           onCancel={() => setShowConfirm(false)}
         />
