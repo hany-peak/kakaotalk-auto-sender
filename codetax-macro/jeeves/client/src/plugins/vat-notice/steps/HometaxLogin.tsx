@@ -1,11 +1,36 @@
+import { useEffect, useCallback } from 'react';
 import { useSession } from '../../../core/hooks/useSession';
+import { useSSE } from '../../../core/hooks/useSSE';
+import type { SSEEvent } from '../../../core/types';
 
 interface HometaxLoginProps {
   onLoggedIn: () => void;
 }
 
 export function HometaxLogin({ onLoggedIn }: HometaxLoginProps) {
-  const { status, login } = useSession();
+  const { status, login, setStatus } = useSession();
+
+  // SSE로 로그인 상태 수신
+  const handleEvent = useCallback((event: SSEEvent) => {
+    if (event.type === 'status') {
+      if (event.message === 'logged-in') {
+        setStatus({ loggedIn: true, isLoggingIn: false });
+      } else if (event.message === 'logging-in') {
+        setStatus({ isLoggingIn: true });
+      } else if (event.message === 'idle') {
+        setStatus({ loggedIn: false, isLoggingIn: false });
+      }
+    }
+  }, [setStatus]);
+
+  useSSE(handleEvent);
+
+  // 로그인 완료 시 다음 스텝으로
+  useEffect(() => {
+    if (status.loggedIn) {
+      onLoggedIn();
+    }
+  }, [status.loggedIn, onLoggedIn]);
 
   async function handleLogin() {
     try {
@@ -13,10 +38,6 @@ export function HometaxLogin({ onLoggedIn }: HometaxLoginProps) {
     } catch (err: any) {
       console.error('Login error:', err.message);
     }
-  }
-
-  if (status.loggedIn) {
-    onLoggedIn();
   }
 
   return (
