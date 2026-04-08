@@ -6,7 +6,7 @@ interface MessagePanelProps {
   onSelect: (msg: string, idx: number) => void;
 }
 
-export function MessagePanel({ selectedMessage, onSelect }: MessagePanelProps) {
+export function MessagePanel({ selectedMessage: _selectedMessage, onSelect }: MessagePanelProps) {
   const api = useApi();
   const [messages, setMessages] = useState<string[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(-1);

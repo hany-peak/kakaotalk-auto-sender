@@ -17,7 +17,7 @@ interface KakaoSendPageProps {
 }
 
 export function KakaoSendPage({ folder }: KakaoSendPageProps = {}) {
-  const { targets, setTargets, loading, loadTargets, updateInfo } = useKakaoTargets();
+  const { targets, setTargets, loading: _loading, loadTargets, updateInfo } = useKakaoTargets();
   const { sending, setSending, startSend, stopSend } = useKakaoSend();
 
   // Selection
