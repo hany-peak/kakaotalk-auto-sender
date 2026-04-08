@@ -33,33 +33,41 @@ export function Sidebar({ plugins }: SidebarProps) {
         </NavLink>
       </nav>
 
-      <nav className="px-3 mb-2">
-        <div className="text-[10px] uppercase tracking-widest text-muted px-2 mb-1.5">매크로</div>
-        {plugins.map((p) => (
-          <NavLink
-            key={p.id}
-            to={p.status === 'ready' ? `/${p.id}` : '#'}
-            className={({ isActive }) =>
-              `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all ${
-                p.status === 'coming-soon'
-                  ? 'opacity-40 cursor-default text-muted'
-                  : isActive
-                    ? 'bg-accent/15 text-accent font-semibold'
-                    : 'text-muted hover:bg-surface2 hover:text-text'
-              }`
-            }
-            onClick={(e) => p.status === 'coming-soon' && e.preventDefault()}
-          >
-            <span className="text-base w-5 text-center">{p.icon}</span>
-            {p.name}
-            {p.badge && (
-              <span className="ml-auto bg-accent text-white text-[10px] px-1.5 py-px rounded-full">
-                {p.badge}
-              </span>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+      <NavSection label="매크로" plugins={plugins.filter((p) => p.category !== 'send')} />
+      <NavSection label="전송" plugins={plugins.filter((p) => p.category === 'send')} />
     </aside>
+  );
+}
+
+function NavSection({ label, plugins }: { label: string; plugins: MacroPagePlugin[] }) {
+  if (plugins.length === 0) return null;
+  return (
+    <nav className="px-3 mb-2">
+      <div className="text-[10px] uppercase tracking-widest text-muted px-2 mb-1.5">{label}</div>
+      {plugins.map((p) => (
+        <NavLink
+          key={p.id}
+          to={p.status === 'ready' ? `/${p.id}` : '#'}
+          className={({ isActive }) =>
+            `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-all ${
+              p.status === 'coming-soon'
+                ? 'opacity-40 cursor-default text-muted'
+                : isActive
+                  ? 'bg-accent/15 text-accent font-semibold'
+                  : 'text-muted hover:bg-surface2 hover:text-text'
+            }`
+          }
+          onClick={(e) => p.status === 'coming-soon' && e.preventDefault()}
+        >
+          <span className="text-base w-5 text-center">{p.icon}</span>
+          {p.name}
+          {p.badge && (
+            <span className="ml-auto bg-accent text-white text-[10px] px-1.5 py-px rounded-full">
+              {p.badge}
+            </span>
+          )}
+        </NavLink>
+      ))}
+    </nav>
   );
 }

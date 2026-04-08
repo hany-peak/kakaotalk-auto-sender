@@ -8,4 +8,5 @@ export const kakaoSendPlugin: MacroPagePlugin = {
   status: 'ready',
   description: '그룹 카톡방 이미지·문구 자동 전송',
   Page: KakaoSendPage,
+  category: 'send',
 };

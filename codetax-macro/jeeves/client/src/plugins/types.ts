@@ -8,4 +8,5 @@ export interface MacroPagePlugin {
   description: string;
   Page: ComponentType;
   badge?: string;
+  category?: 'macro' | 'send';
 }
