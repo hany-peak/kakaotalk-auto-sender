@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { KakaoTarget } from '../../../core/types';
 
 interface TargetTableProps {
@@ -78,12 +79,7 @@ export function TargetTable(props: TargetTableProps) {
                       className="bg-surface2 border border-border rounded-md text-text px-2.5 py-1 text-[13px] flex-1 outline-none"
                     />
                     {t.imagePath && (
-                      <button
-                        onClick={() => props.onGroupNameSave(key, t.imagePath!)}
-                        className="border border-border rounded-md text-[11px] px-2 py-1 text-muted hover:text-text shrink-0"
-                      >
-                        저장
-                      </button>
+                      <SaveButton onSave={() => props.onGroupNameSave(key, t.imagePath!)} />
                     )}
                   </div>
                 </td>
@@ -123,5 +119,34 @@ export function TargetTable(props: TargetTableProps) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function SaveButton({ onSave }: { onSave: () => Promise<void> | void }) {
+  const [state, setState] = useState<'idle' | 'saving' | 'done' | 'failed'>('idle');
+
+  async function handleClick() {
+    setState('saving');
+    try {
+      await onSave();
+      setState('done');
+      setTimeout(() => setState('idle'), 1500);
+    } catch {
+      setState('failed');
+      setTimeout(() => setState('idle'), 1500);
+    }
+  }
+
+  const label = { idle: '저장', saving: '...', done: '✓', failed: '실패' }[state];
+  const color = state === 'done' ? 'text-success' : state === 'failed' ? 'text-danger' : 'text-muted hover:text-text';
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={state === 'saving'}
+      className={`border border-border rounded-md text-[11px] px-2 py-1 shrink-0 transition-colors ${color}`}
+    >
+      {label}
+    </button>
   );
 }
