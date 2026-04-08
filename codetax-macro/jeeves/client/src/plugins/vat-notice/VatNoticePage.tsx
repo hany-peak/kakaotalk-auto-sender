@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useVatWorkflow } from './hooks/useVatWorkflow';
 import { WorkflowBar } from './components/WorkflowBar';
+import { FolderSelectModal } from './components/FolderSelectModal';
 import { ExcelUpload } from './steps/ExcelUpload';
 import { HometaxLogin } from './steps/HometaxLogin';
 import { AutoCollection } from './steps/AutoCollection';
@@ -14,10 +15,11 @@ interface Business {
 }
 
 export function VatNoticePage() {
-  const { step, setStep, dateFolder, startFresh } = useVatWorkflow();
+  const { step, setStep, dateFolder, setDateFolder, startFresh } = useVatWorkflow();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [taxYear, setTaxYear] = useState(new Date().getFullYear());
   const [taxPeriod, setTaxPeriod] = useState(1);
+  const [showFolderModal, setShowFolderModal] = useState(false);
 
   const handleExcelParsed = useCallback(
     (biz: Business[], year: number, period: number) => {
@@ -44,7 +46,7 @@ export function VatNoticePage() {
             🚀 새롭게 하기
           </button>
           <button
-            onClick={() => setStep(5)}
+            onClick={() => setShowFolderModal(true)}
             className="border border-border text-text px-3 py-1.5 rounded-lg text-[13px] font-medium hover:bg-surface2"
           >
             📂 이전 작업 이어서 하기
@@ -68,6 +70,17 @@ export function VatNoticePage() {
         {step === 4 && <CollectionProgress onDone={() => setStep(5)} />}
         {step === 5 && <KakaoSendStep dateFolder={dateFolder} />}
       </div>
+
+      {showFolderModal && (
+        <FolderSelectModal
+          onSelect={(folder) => {
+            setShowFolderModal(false);
+            setDateFolder(folder);
+            setStep(5);
+          }}
+          onCancel={() => setShowFolderModal(false)}
+        />
+      )}
     </div>
   );
 }
