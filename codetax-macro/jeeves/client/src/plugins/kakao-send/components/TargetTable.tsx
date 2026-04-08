@@ -78,9 +78,7 @@ export function TargetTable(props: TargetTableProps) {
                       onChange={(e) => props.onGroupNameChange(key, e.target.value)}
                       className="bg-surface2 border border-border rounded-md text-text px-2.5 py-1 text-[13px] flex-1 outline-none"
                     />
-                    {t.imagePath && (
-                      <SaveButton onSave={() => props.onGroupNameSave(key, t.imagePath!)} />
-                    )}
+                    <SaveButton onSave={() => props.onGroupNameSave(key, t.imagePath || '')} />
                   </div>
                 </td>
                 <td className="p-2 text-xs text-muted">{formatTax(t.taxAmount)}</td>

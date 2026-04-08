@@ -101,6 +101,17 @@ export function KakaoSendPage({ folder }: KakaoSendPageProps = {}) {
   async function handleGroupNameSave(key: string, imagePath: string) {
     const target = targets.find((t) => t.bizNo.replace(/-/g, '') === key);
     if (!target) return;
+    // imagePath가 없으면 localStorage에만 저장
+    if (!imagePath) {
+      localStorage.setItem(
+        'jeeves_group_names',
+        JSON.stringify({
+          ...JSON.parse(localStorage.getItem('jeeves_group_names') || '{}'),
+          [key]: target.groupName,
+        }),
+      );
+      return;
+    }
     await updateInfo(imagePath, { groupName: target.groupName });
   }
 
