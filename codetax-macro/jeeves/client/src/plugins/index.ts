@@ -1,21 +1,14 @@
 import type { MacroPagePlugin } from './types';
 import { vatNoticePlugin } from './vat-notice';
+import { kakaoSendPlugin } from './kakao-send';
 
-// Placeholder for future plugins
 function PlaceholderPage() {
   return <div className="text-muted">Coming soon...</div>;
 }
 
 export const plugins: MacroPagePlugin[] = [
   vatNoticePlugin,
-  {
-    id: 'kakao-send',
-    name: '카카오톡 전송',
-    icon: '💬',
-    status: 'ready',
-    description: 'Send images and messages to KakaoTalk group chats',
-    Page: PlaceholderPage,
-  },
+  kakaoSendPlugin,
   {
     id: 'income-tax',
     name: '소득세 집계',
