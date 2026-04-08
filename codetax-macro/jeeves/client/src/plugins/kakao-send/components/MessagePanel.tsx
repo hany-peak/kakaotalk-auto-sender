@@ -49,7 +49,7 @@ export function MessagePanel({ selectedMessage: _selectedMessage, onSelect }: Me
   return (
     <div className="mb-4">
       <div className="text-xs text-muted mb-2">
-        Send Message <span className="text-border">(skip to send image only)</span>
+        전송 문구 <span className="text-border">(선택 안 하면 이미지만 전송)</span>
       </div>
       <div className="flex flex-col gap-1.5 mb-2.5">
         {messages.map((msg, i) => (
@@ -77,14 +77,14 @@ export function MessagePanel({ selectedMessage: _selectedMessage, onSelect }: Me
           value={newMsg}
           onChange={(e) => setNewMsg(e.target.value)}
           rows={2}
-          placeholder="New message..."
+          placeholder="새 문구 입력..."
           className="flex-1 bg-surface2 border border-border rounded-lg text-text p-2 text-[13px] resize-y outline-none font-[inherit]"
         />
         <button
           onClick={addMessage}
           className="border border-border rounded-lg px-3 py-2 text-sm text-muted hover:text-text shrink-0"
         >
-          + Add
+          + 추가
         </button>
       </div>
     </div>

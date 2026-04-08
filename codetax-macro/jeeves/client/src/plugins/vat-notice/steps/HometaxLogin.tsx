@@ -23,24 +23,24 @@ export function HometaxLogin({ onLoggedIn }: HometaxLoginProps) {
     <div className="bg-surface border border-border rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <span className="bg-accent text-white text-[10px] px-2 py-0.5 rounded-full font-bold">STEP 2</span>
-        <h3 className="font-bold text-sm">HomeTax Login</h3>
+        <h3 className="font-bold text-sm">홈택스 로그인</h3>
         <span className={`text-[11px] px-2 py-0.5 rounded-full ${
           status.loggedIn ? 'bg-success/20 text-success' : 'bg-accent/20 text-accent'
         }`}>
-          {status.loggedIn ? 'Session confirmed' : status.isLoggingIn ? 'Logging in...' : 'Waiting'}
+          {status.loggedIn ? '✅ 세션 확인됨' : status.isLoggingIn ? '로그인 중...' : '대기 중'}
         </span>
       </div>
 
       <div className="p-5 bg-surface2 rounded-lg text-[13.5px] leading-[1.9] text-muted">
-        Login with your certificate in the Chrome window.
+        열린 Chrome 창에서 공동인증서로 로그인해 주세요.
         <br />
-        The next step will activate automatically after login.
+        로그인이 완료되면 자동으로 다음 단계가 활성화됩니다.
       </div>
 
       {status.isLoggingIn && (
         <div className="mt-3 text-sm text-muted flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          Checking session...
+          세션 확인 중...
         </div>
       )}
 
@@ -50,7 +50,7 @@ export function HometaxLogin({ onLoggedIn }: HometaxLoginProps) {
           disabled={status.isLoggingIn || status.loggedIn}
           className="bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/90 transition-colors"
         >
-          🔐 Start HomeTax Login
+          🔐 홈택스 로그인 시작
         </button>
       </div>
     </div>

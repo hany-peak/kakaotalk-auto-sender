@@ -6,6 +6,6 @@ export const kakaoSendPlugin: MacroPagePlugin = {
   name: '카카오톡 전송',
   icon: '💬',
   status: 'ready',
-  description: 'Send images and messages to KakaoTalk group chats',
+  description: '그룹 카톡방 이미지·문구 자동 전송',
   Page: KakaoSendPage,
 };

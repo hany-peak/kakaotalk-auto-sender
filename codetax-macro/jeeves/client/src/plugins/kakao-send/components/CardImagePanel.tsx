@@ -46,14 +46,14 @@ export function CardImagePanel({ selected, onSelect }: CardImagePanelProps) {
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2.5 mb-2">
-        <span className="text-xs text-muted">Card Image <span className="text-border">(skip to not send)</span></span>
+        <span className="text-xs text-muted">대표 카드 이미지 <span className="text-border">(선택 안 하면 미전송)</span></span>
         <label className="cursor-pointer text-accent text-xs border border-accent rounded-md px-2.5 py-[3px]">
-          + Upload
+          + 업로드
           <input type="file" accept="image/*" multiple onChange={(e) => e.target.files && upload(e.target.files)} className="hidden" />
         </label>
       </div>
       <div className="flex flex-wrap gap-2 min-h-[32px]">
-        {images.length === 0 && <div className="text-muted text-[13px]">No card images uploaded.</div>}
+        {images.length === 0 && <div className="text-muted text-[13px]">업로드된 카드 이미지가 없습니다.</div>}
         {images.map((img) => {
           const isSel = selected?.name === img.name;
           return (

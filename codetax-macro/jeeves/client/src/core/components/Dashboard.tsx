@@ -11,9 +11,9 @@ export function Dashboard({ plugins }: DashboardProps) {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-lg font-bold">Hello, Jeeves here</h2>
+        <h2 className="text-lg font-bold">👋 안녕하세요, Jeeves입니다</h2>
         <p className="text-sm text-muted mt-1">
-          Automate your tax accounting tasks. Choose a macro below.
+          코드택스 세무회계 반복 업무를 자동화합니다. 필요한 매크로를 선택하세요.
         </p>
       </div>
 
@@ -35,7 +35,7 @@ export function Dashboard({ plugins }: DashboardProps) {
                   : 'bg-muted/20 text-muted'
               }`}
             >
-              {p.status === 'ready' ? 'Available' : 'Coming Soon'}
+              {p.status === 'ready' ? '사용 가능' : '준비 중'}
             </div>
             <div className="text-3xl mb-3">{p.icon}</div>
             <h3 className="font-bold text-sm mb-1">{p.name}</h3>

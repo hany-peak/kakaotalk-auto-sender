@@ -6,11 +6,11 @@ interface WorkflowBarProps {
 }
 
 const steps = [
-  { num: 1, title: 'Excel Upload', sub: 'Set query criteria' },
-  { num: 2, title: 'HomeTax Login', sub: 'Certificate auth' },
-  { num: 3, title: 'Start Collection', sub: 'VAT notice query' },
-  { num: 4, title: 'In Progress', sub: 'Saving notices' },
-  { num: 5, title: 'KakaoTalk Send', sub: 'Group chat auto-send' },
+  { num: 1, title: '엑셀 업로드', sub: '조회 기준 설정' },
+  { num: 2, title: '홈택스 로그인', sub: '공동인증서' },
+  { num: 3, title: '수집 시작', sub: '부가가치세 예정고지 납부서 조회' },
+  { num: 4, title: '수집 진행중', sub: '납부서 저장' },
+  { num: 5, title: '카카오톡 전송하기', sub: '그룹카톡방 자동 전송' },
 ];
 
 export function WorkflowBar({ currentStep, onJumpToKakao }: WorkflowBarProps) {

@@ -22,21 +22,21 @@ export function SendConfirmModal({ targets, message, cardImageName, onConfirm, o
         className="bg-surface border border-border rounded-2xl w-[620px] max-w-[90vw] max-h-[80vh] p-7 shadow-2xl flex flex-col"
       >
         <div className="flex items-center justify-between mb-4">
-          <span className="text-base font-bold">💬 Confirm KakaoTalk Send</span>
+          <span className="text-base font-bold">💬 카카오톡 전송 확인</span>
           <button onClick={onCancel} className="text-muted text-xl cursor-pointer bg-transparent border-none">x</button>
         </div>
 
         <div className="text-[13px] text-muted mb-3">
-          Total <b className="text-accent">{targets.length}</b> items
-          {' '}(with image: {withImg}{noImg > 0 && <>, <span className="text-danger">no image: {noImg}</span></>})
+          총 <b className="text-accent">{targets.length}</b>건 전송 예정
+          {' '}(이미지 있음: {withImg}{noImg > 0 && <>, <span className="text-danger">이미지 없음: {noImg}</span></>})
         </div>
 
         {message ? (
           <div className="text-xs text-muted bg-surface2 rounded-lg p-2.5 mb-3 whitespace-pre-wrap">
-            <b>Message:</b><br />{message}
+            <b>전송 문구:</b><br />{message}
           </div>
         ) : (
-          <div className="text-xs text-yellow-400 mb-3">⚠ No message selected — images only</div>
+          <div className="text-xs text-yellow-400 mb-3">⚠ 전송 문구 미선택 — 이미지만 전송됩니다</div>
         )}
 
         {cardImageName && (
@@ -47,10 +47,10 @@ export function SendConfirmModal({ targets, message, cardImageName, onConfirm, o
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left p-1">Name</th>
-                <th className="text-left p-1">Biz No</th>
-                <th className="text-left p-1">Chat</th>
-                <th className="text-center p-1">Image</th>
+                <th className="text-left p-1">사업자명</th>
+                <th className="text-left p-1">사업자번호</th>
+                <th className="text-left p-1">카톡방</th>
+                <th className="text-center p-1">이미지</th>
               </tr>
             </thead>
             <tbody>
@@ -68,10 +68,10 @@ export function SendConfirmModal({ targets, message, cardImageName, onConfirm, o
 
         <div className="flex justify-end gap-2.5">
           <button onClick={onCancel} className="border border-border rounded-lg px-4 py-2 text-sm text-muted hover:bg-surface2">
-            Cancel
+            취소
           </button>
           <button onClick={onConfirm} className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/90">
-            Send
+            전송하기
           </button>
         </div>
       </div>

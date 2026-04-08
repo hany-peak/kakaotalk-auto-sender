@@ -32,22 +32,22 @@ export function VatNoticePage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold">⚡ VAT Preliminary Notice Macro</h2>
+        <h2 className="text-lg font-bold">⚡ 부가가치세 예정고지 납부서 매크로</h2>
         <p className="text-sm text-muted mt-1">
-          Excel upload → HomeTax auto-collection → KakaoTalk send
+          엑셀 업로드 → 사업자번호 추출 → 홈택스 자동 접속 → 자동화 수집 → 카카오톡 전송
         </p>
         <div className="flex gap-2 mt-2">
           <button
             onClick={startFresh}
             className="bg-accent text-white px-3 py-1.5 rounded-lg text-[13px] font-medium hover:bg-accent/90"
           >
-            🚀 Start Fresh
+            🚀 새롭게 하기
           </button>
           <button
             onClick={() => setStep(5)}
             className="border border-border text-text px-3 py-1.5 rounded-lg text-[13px] font-medium hover:bg-surface2"
           >
-            📂 Resume Previous
+            📂 이전 작업 이어서 하기
           </button>
         </div>
       </div>

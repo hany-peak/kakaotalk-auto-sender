@@ -6,7 +6,7 @@ export const vatNoticePlugin: MacroPagePlugin = {
   name: '부가가치세 예정고지',
   icon: '⚡',
   status: 'ready',
-  description: 'Excel upload → HomeTax auto-collection → KakaoTalk send',
+  description: '엑셀 업로드 → 홈택스 자동 수집 → 카카오톡 전송',
   Page: VatNoticePage,
   badge: 'NEW',
 };

@@ -17,10 +17,10 @@ export function ProgressBar({ current, total, success, failed }: ProgressBarProp
         />
       </div>
       <div className="flex gap-5">
-        <Stat value={total} label="Total" />
-        <Stat value={success} label="Success" className="text-success" />
-        <Stat value={failed} label="Failed" className="text-danger" />
-        <Stat value={current} label="Current" className="text-accent" />
+        <Stat value={total} label="전체" />
+        <Stat value={success} label="완료" className="text-success" />
+        <Stat value={failed} label="실패" className="text-danger" />
+        <Stat value={current} label="처리 중" className="text-accent" />
       </div>
     </div>
   );

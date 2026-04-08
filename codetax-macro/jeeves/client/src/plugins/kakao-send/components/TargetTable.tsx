@@ -18,10 +18,10 @@ function formatTax(n: number) {
 }
 
 const statusStyles: Record<string, { bg: string; color: string; label: string }> = {
-  done: { bg: 'bg-success/20', color: 'text-success', label: 'Done' },
-  sending: { bg: 'bg-accent/20', color: 'text-accent', label: 'Sending' },
-  failed: { bg: 'bg-danger/20', color: 'text-danger', label: 'Failed' },
-  skipped: { bg: 'bg-yellow-400/20', color: 'text-yellow-400', label: 'Skipped' },
+  done: { bg: 'bg-success/20', color: 'text-success', label: '완료' },
+  sending: { bg: 'bg-accent/20', color: 'text-accent', label: '전송중' },
+  failed: { bg: 'bg-danger/20', color: 'text-danger', label: '실패' },
+  skipped: { bg: 'bg-yellow-400/20', color: 'text-yellow-400', label: '건너뜀' },
 };
 
 export function TargetTable(props: TargetTableProps) {
@@ -38,21 +38,21 @@ export function TargetTable(props: TargetTableProps) {
                 className="w-[15px] h-[15px] cursor-pointer accent-accent"
               />
             </th>
-            <th className="p-2">Name</th>
-            <th className="p-2">Biz No</th>
-            <th className="p-2">Group Chat</th>
-            <th className="p-2">Tax Amount</th>
-            <th className="p-2">Image</th>
-            <th className="p-2">Verify</th>
-            <th className="p-2">Notes</th>
-            <th className="p-2">Status</th>
+            <th className="p-2">사업자명</th>
+            <th className="p-2">사업자번호</th>
+            <th className="p-2">그룹 카톡방 검색어</th>
+            <th className="p-2">예정고지 세액</th>
+            <th className="p-2">전송 이미지</th>
+            <th className="p-2">검증</th>
+            <th className="p-2">기타 특이사항</th>
+            <th className="p-2">전송 여부</th>
           </tr>
         </thead>
         <tbody>
           {props.targets.map((t) => {
             const key = t.bizNo.replace(/-/g, '');
             const liveStatus = props.statusMap[key] || t.status;
-            const style = statusStyles[liveStatus] || { bg: 'bg-muted/15', color: 'text-muted', label: 'Pending' };
+            const style = statusStyles[liveStatus] || { bg: 'bg-muted/15', color: 'text-muted', label: '대기중' };
 
             return (
               <tr
@@ -82,7 +82,7 @@ export function TargetTable(props: TargetTableProps) {
                         onClick={() => props.onGroupNameSave(key, t.imagePath!)}
                         className="border border-border rounded-md text-[11px] px-2 py-1 text-muted hover:text-text shrink-0"
                       >
-                        Save
+                        저장
                       </button>
                     )}
                   </div>

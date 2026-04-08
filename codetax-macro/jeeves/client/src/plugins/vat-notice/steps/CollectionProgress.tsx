@@ -41,7 +41,7 @@ export function CollectionProgress({ onDone }: CollectionProgressProps) {
     <div className="bg-surface border border-border rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <span className="bg-accent text-white text-[10px] px-2 py-0.5 rounded-full font-bold">STEP 4</span>
-        <h3 className="font-bold text-sm">Collection Progress</h3>
+        <h3 className="font-bold text-sm">자동화 수집 진행</h3>
         <span className="text-[11px] text-accent bg-accent/20 px-2 py-0.5 rounded-full">
           {progress.current}/{progress.total}
         </span>
@@ -50,7 +50,7 @@ export function CollectionProgress({ onDone }: CollectionProgressProps) {
             onClick={handleStop}
             className="ml-auto bg-danger text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-danger/90"
           >
-            ⏹ Stop
+            ⏹ 중지
           </button>
         )}
       </div>
@@ -58,7 +58,7 @@ export function CollectionProgress({ onDone }: CollectionProgressProps) {
       <ProgressBar {...progress} />
 
       <div className="mt-4">
-        <div className="text-xs text-muted mb-1.5">Live Log</div>
+        <div className="text-xs text-muted mb-1.5">실시간 로그</div>
         <LogViewer logs={logs} />
       </div>
     </div>

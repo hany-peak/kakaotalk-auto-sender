@@ -16,7 +16,7 @@ export function Sidebar({ plugins }: SidebarProps) {
       </div>
 
       <nav className="px-3 mb-2">
-        <div className="text-[10px] uppercase tracking-widest text-muted px-2 mb-1.5">Home</div>
+        <div className="text-[10px] uppercase tracking-widest text-muted px-2 mb-1.5">홈</div>
         <NavLink
           to="/"
           end
@@ -29,12 +29,12 @@ export function Sidebar({ plugins }: SidebarProps) {
           }
         >
           <span className="text-base w-5 text-center">🏠</span>
-          Dashboard
+          대시보드
         </NavLink>
       </nav>
 
       <nav className="px-3 mb-2">
-        <div className="text-[10px] uppercase tracking-widest text-muted px-2 mb-1.5">Macros</div>
+        <div className="text-[10px] uppercase tracking-widest text-muted px-2 mb-1.5">매크로</div>
         {plugins.map((p) => (
           <NavLink
             key={p.id}

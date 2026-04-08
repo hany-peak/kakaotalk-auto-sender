@@ -10,7 +10,7 @@ export function KakaoPreview({ groupName, message, cardImageUrl, bizImageUrl }: 
 
   return (
     <div className="w-[260px] shrink-0 sticky top-0 self-start">
-      <div className="text-xs text-muted mb-2">Send Preview</div>
+      <div className="text-xs text-muted mb-2">전송 미리보기</div>
       <div className="bg-[#1e1e1e] rounded-[14px] overflow-hidden border border-[#333] shadow-xl font-sans">
         {/* Window chrome */}
         <div className="bg-[#2a2a2a] px-3.5 py-2.5 flex items-center gap-1.5">
@@ -22,8 +22,8 @@ export function KakaoPreview({ groupName, message, cardImageUrl, bizImageUrl }: 
         <div className="bg-[#2a2a2a] px-3.5 py-2.5 flex items-center gap-2.5 border-b border-[#333]">
           <div className="w-9 h-9 rounded-full bg-[#444] flex items-center justify-center text-base shrink-0">👤</div>
           <div>
-            <div className="text-[13px] font-semibold text-white">{groupName || '(group chat)'}</div>
-            <div className="text-[11px] text-[#888]">KakaoTalk</div>
+            <div className="text-[13px] font-semibold text-white">{groupName || '(기장소통방)'}</div>
+            <div className="text-[11px] text-[#888]">카카오톡</div>
           </div>
         </div>
         {/* Chat area */}
@@ -48,7 +48,7 @@ export function KakaoPreview({ groupName, message, cardImageUrl, bizImageUrl }: 
               {bizImageUrl ? (
                 <img src={bizImageUrl} className="w-full h-full object-cover" />
               ) : (
-                <div className="text-[#555] text-[11px]">No image</div>
+                <div className="text-[#555] text-[11px]">이미지 없음</div>
               )}
             </div>
             <div className="text-[10px] text-[#555]">{time}</div>
@@ -56,8 +56,8 @@ export function KakaoPreview({ groupName, message, cardImageUrl, bizImageUrl }: 
         </div>
         {/* Input bar */}
         <div className="bg-[#1a1a1a] px-2.5 py-2 flex items-center gap-2 border-t border-[#333]">
-          <div className="flex-1 bg-[#2a2a2a] rounded-[18px] px-3.5 py-[7px] text-xs text-[#555]">Message</div>
-          <div className="bg-[#f9e000] rounded-lg px-3 py-1.5 text-xs font-bold text-[#3a3000]">Send</div>
+          <div className="flex-1 bg-[#2a2a2a] rounded-[18px] px-3.5 py-[7px] text-xs text-[#555]">메시지 입력</div>
+          <div className="bg-[#f9e000] rounded-lg px-3 py-1.5 text-xs font-bold text-[#3a3000]">전송</div>
         </div>
       </div>
     </div>

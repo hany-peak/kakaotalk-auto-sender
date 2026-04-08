@@ -123,20 +123,20 @@ export function KakaoSendPage({ folder }: KakaoSendPageProps = {}) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <h3 className="font-bold text-sm">KakaoTalk Auto Send</h3>
+        <h3 className="font-bold text-sm">카카오톡 자동 전송</h3>
         <button onClick={() => loadTargets(folder || undefined)} className="border border-border rounded-lg px-3 py-1 text-xs text-muted hover:text-text">
-          🔄 Refresh
+          🔄 새로고침
         </button>
         <button
           onClick={handleSend}
           disabled={sending || checkedKeys.size === 0}
           className="ml-auto bg-accent text-white px-4 py-1.5 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-accent/90"
         >
-          💬 Send ({checkedKeys.size})
+          💬 전송 시작 ({checkedKeys.size}건)
         </button>
         {sending && (
           <button onClick={stopSend} className="bg-danger text-white px-3 py-1.5 rounded-lg text-sm hover:bg-danger/90">
-            ⏹ Stop
+            ⏹ 전송 중지
           </button>
         )}
       </div>
@@ -187,7 +187,7 @@ export function KakaoSendPage({ folder }: KakaoSendPageProps = {}) {
 
       {logs.length > 0 && (
         <div className="mt-4">
-          <div className="text-xs text-muted mb-1.5">Send Log</div>
+          <div className="text-xs text-muted mb-1.5">전송 로그</div>
           <LogViewer logs={logs} height="260px" />
         </div>
       )}

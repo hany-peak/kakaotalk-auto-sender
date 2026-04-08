@@ -3,7 +3,7 @@ import { vatNoticePlugin } from './vat-notice';
 import { kakaoSendPlugin } from './kakao-send';
 
 function PlaceholderPage() {
-  return <div className="text-muted">Coming soon...</div>;
+  return <div className="text-muted">준비 중...</div>;
 }
 
 export const plugins: MacroPagePlugin[] = [
@@ -14,7 +14,7 @@ export const plugins: MacroPagePlugin[] = [
     name: '소득세 집계',
     icon: '📊',
     status: 'coming-soon',
-    description: 'HomeTax income data aggregation',
+    description: '홈택스 소득 데이터 집계 및 정리',
     Page: PlaceholderPage,
   },
   {
@@ -22,7 +22,7 @@ export const plugins: MacroPagePlugin[] = [
     name: '원천세 정리',
     icon: '🧾',
     status: 'coming-soon',
-    description: 'Withholding tax auto-classification',
+    description: '원천세 납부 내역 자동 분류',
     Page: PlaceholderPage,
   },
   {
@@ -30,7 +30,7 @@ export const plugins: MacroPagePlugin[] = [
     name: '사업자 조회',
     icon: '🔍',
     status: 'coming-soon',
-    description: 'Batch business number verification',
+    description: '사업자번호 일괄 상태 확인',
     Page: PlaceholderPage,
   },
 ];
