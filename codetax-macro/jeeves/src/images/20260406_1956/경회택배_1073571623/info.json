@@ -1,0 +1,12 @@
+{
+  "name": "경회택배",
+  "bizNo": "107-35-71623",
+  "taxAmount": 565000,
+  "groupName": "기장소통방_1073571623",
+  "status": "대기중",
+  "savedAt": "2026-04-06T13:37:29.101Z",
+  "ocrStatus": "ok",
+  "updatedAt": "2026-04-07T12:11:07.596Z",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:10:55.078Z"
+}

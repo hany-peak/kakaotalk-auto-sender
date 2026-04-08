@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "timestamp": "2025-04-08T02:16:24.834Z",
+    "farmName": "365삼",
+    "contact": "010-2409-3653",
+    "address": "",
+    "searchKeyword": "평창 엄나무순 직거래",
+    "source": "구글",
+    "memo": "온라인 거래 처음이나, 관심있어 하심",
+    "products": [
+      "두릅"
+    ],
+    "priceListImage": null
+  },
+  {
+    "id": 2,
+    "timestamp": "2025-04-08T02:17:09.916Z",
+    "farmName": "지리산농사꾼",
+    "contact": "01067228893",
+    "address": "",
+    "searchKeyword": "지리산 엄나무순 농가",
+    "source": "구글",
+    "memo": "1kg/40,000원",
+    "products": [
+      "고사리",
+      "엄나무순"
+    ],
+    "priceListImage": null
+  },
+  {
+    "id": 3,
+    "timestamp": "2025-04-08T02:18:06.035Z",
+    "farmName": "오지마을 참살이",
+    "contact": "010-3297-3142",
+    "address": "",
+    "searchKeyword": "강원도 엄나무순 산지 직송",
+    "source": "구글",
+    "memo": "문자 하나 남겨달라고 하심. 고객온도 따뜻함",
+    "products": [],
+    "priceListImage": null
+  },
+  {
+    "id": 4,
+    "timestamp": "2025-04-08T02:18:44.219Z",
+    "farmName": "강릉산골개두릅농장",
+    "contact": "01053995112",
+    "address": "",
+    "searchKeyword": "강원도 엄나무순 산지 직송",
+    "source": "구글",
+    "memo": "50~100kg 공급 가능합니다.",
+    "products": [
+      "엄나무순"
+    ],
+    "priceListImage": null
+  }
+]

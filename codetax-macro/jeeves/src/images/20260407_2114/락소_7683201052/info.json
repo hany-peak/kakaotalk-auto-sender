@@ -1,0 +1,13 @@
+{
+  "name": "락소",
+  "bizNo": "768-32-01052",
+  "taxAmount": 628000,
+  "groupName": "7683201052",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:18:29.713Z",
+  "ocrStatus": "warn",
+  "ocrNote": "1천원 차이",
+  "ocrVerifiedAt": "2026-04-07T12:47:11.297Z",
+  "updatedAt": "2026-04-08T03:45:36.843Z"
+}

@@ -1,0 +1,31 @@
+/* components/Layout.module.css */
+.navbar {
+  background-color: #f3f4f6; /* bg-gray-100 */
+  padding: 0.75rem 1rem; /* py-3 px-4 */
+  border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.navList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem; /* gap-6 */
+}
+
+.navLink {
+  text-decoration: none;
+  color: #374151; /* text-gray-700 */
+  font-weight: 500; /* font-medium */
+}
+
+.navLink:hover {
+  color: #1f2937; /* text-gray-900 */
+}
+
+.mainContent {
+  /* Add padding or other styles for the main content area if needed */
+  padding-top: 1rem; /* Example padding */
+} 

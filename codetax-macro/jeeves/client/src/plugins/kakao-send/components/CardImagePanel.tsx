@@ -5,7 +5,7 @@ interface CardImage {
   name: string;
   url: string;
   path: string;
-  mtime: number;
+  mtime?: number;
 }
 
 interface CardImagePanelProps {

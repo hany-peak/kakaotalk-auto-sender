@@ -1,0 +1,13 @@
+{
+  "delays": {
+    "after_activate": 1.0,
+    "after_search_open": 0.7,
+    "after_type_room": 1.2,
+    "after_open_room": 1.0,
+    "after_paste_message": 0.5
+  },
+  "rooms": {
+    "example_group": "개발팀",
+    "example_dm": "홍길동"
+  }
+}

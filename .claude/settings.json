@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -c ':*)",
+      "Bash(python -c \"import os; os.makedirs\\('/Users/hany/workzone/autoworkers-script/channels/economy/config/assets/mascot', exist_ok=True\\); os.makedirs\\('/Users/hany/workzone/autoworkers-script/channels/economy/config/assets/style-reference', exist_ok=True\\); os.makedirs\\('/Users/hany/workzone/autoworkers-script/channels/economy/projects', exist_ok=True\\)\")",
+      "Bash(.venv/bin/python scripts/collect.py --project mideast-oilshock --channel \"economy\" \"https://www.youtube.com/watch?v=TCTIrBk7AWc\")",
+      "Bash(python -c \"import os; os.makedirs\\('/Users/hany/workzone/autoworkers-script/channels/economy/projects/mideast-oilshock/_script', exist_ok=True\\)\")",
+      "Read(//Users/hany/.claude/**)",
+      "Bash(python -c \"import os; os.makedirs\\('/Users/hany/workzone/autoworkers-script/channels/economy/projects/mideast-oilshock/output/thumbnails', exist_ok=True\\)\")",
+      "Bash(ls /Users/hany/workzone/autoworkers-script/channels/cclue-economy/projects/iran-israel-war/_script/_draft_part*.md)",
+      "Bash(.venv/bin/python scripts/src/merge_draft.py --hook-intro channels/cclue-economy/projects/iran-israel-war/_script/hook-intro.md --parts-dir channels/cclue-economy/projects/iran-israel-war/_script --output channels/cclue-economy/projects/iran-israel-war/_script/draft.md)",
+      "Bash(python3 -c ':*)"
+    ],
+    "additionalDirectories": [
+      "/Users/hany/.claude"
+    ]
+  }
+}

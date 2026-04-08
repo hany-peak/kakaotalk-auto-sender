@@ -1,0 +1,21 @@
+# 테마 (ghostty +list-themes 로 전체 목록 확인 가능)
+theme = catppuccin-mocha
+
+# 폰트
+font-family = MesloLGS Nerd Font Mono
+font-size = 14
+
+# 배경 블러 (반투명 사용 시)
+background-blur-radius = 20
+
+# URL 클릭 가능하게
+link-url = true
+
+# 타이핑 중 마우스 커서 숨기기
+mouse-hide-while-typing = true
+
+# Shell integration (zsh 사용자)
+shell-integration = zsh
+
+ 윈도우 장식 window-decoration = true
+

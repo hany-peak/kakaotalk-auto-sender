@@ -1,0 +1,13 @@
+{
+  "name": "원웨이(ONEWAY)",
+  "bizNo": "420-49-00391",
+  "taxAmount": 1596000,
+  "groupName": "4204900391",
+  "taxList": [],
+  "status": "done",
+  "savedAt": "2026-04-07T12:16:22.091Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:47:16.950Z",
+  "updatedAt": "2026-04-08T03:10:46.739Z"
+}
