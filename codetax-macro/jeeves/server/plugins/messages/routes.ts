@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import type { Express } from 'express';
 import type { ServerContext } from '../types';
 
-const MESSAGES_PATH = path.resolve(__dirname, '../../src/messages.json');
+const MESSAGES_PATH = path.resolve(__dirname, '../../../src/messages.json');
 
 function readMessages(): string[] {
   try { return JSON.parse(fs.readFileSync(MESSAGES_PATH, 'utf8')); }

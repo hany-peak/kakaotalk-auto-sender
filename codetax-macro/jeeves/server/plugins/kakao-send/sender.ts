@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 
-const NUT_PATH = path.resolve(__dirname, '../../../../kakao-automation/node_modules/@computer-use/nut-js');
+const NUT_PATH = path.resolve(__dirname, '../../../../../kakao-automation/node_modules/@computer-use/nut-js');
 
 function loadNutJs() {
   try {

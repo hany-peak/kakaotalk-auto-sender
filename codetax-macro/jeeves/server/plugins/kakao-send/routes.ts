@@ -9,8 +9,8 @@ import { scanDateFolders, scanKakaoTargets } from './scanner';
 import { runKakaoSend } from './sender';
 import { BASE_DOWNLOAD_DIR } from '../vat-notice/config';
 
-const KAKAO_LOGS_DIR = path.resolve(__dirname, '../../src/../logs');
-const CARD_IMAGES_BASE = path.resolve(__dirname, '../../src/images/cardImages');
+const KAKAO_LOGS_DIR = path.resolve(__dirname, '../../../logs');
+const CARD_IMAGES_BASE = path.resolve(__dirname, '../../../src/images/cardImages');
 const CARD_IMAGES_DIR = path.join(CARD_IMAGES_BASE, '부가가치세예정고지납부');
 
 let kakaoRunning = false;

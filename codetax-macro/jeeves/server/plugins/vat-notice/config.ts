@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-export const BASE_DOWNLOAD_DIR = path.resolve(__dirname, '../../src/images');
+export const BASE_DOWNLOAD_DIR = path.resolve(__dirname, '../../../src/images');
 
 function getDateStr(): string {
   const d = new Date();
