@@ -7,3 +7,6 @@ dist/
 logs/scheduler-state.json
 logs/thebill-sync/
 logs/thebill-sync-sessions/
+
+# new-client plugin submission store
+server/data/
