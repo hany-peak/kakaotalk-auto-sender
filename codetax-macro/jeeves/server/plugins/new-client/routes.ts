@@ -23,7 +23,7 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
 
     ctx.log(`[new-client] registered: ${record.companyName}`);
 
-    const slackNotified = await notifyNewClient(record, ctx.logError);
+    const slackNotified = await notifyNewClient(record, cfg, ctx.logError);
 
     return res.json({ ok: true, id: record.id, slackNotified });
   });

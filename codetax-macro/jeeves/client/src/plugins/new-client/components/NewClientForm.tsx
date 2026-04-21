@@ -43,6 +43,7 @@ export function NewClientForm({ submitting, onSubmit }: Props) {
     if (!values.companyName.trim()) return '업체명을 입력하세요';
     if (!values.representative.trim()) return '대표자를 입력하세요';
     if (!values.startDate) return '업무착수일을 입력하세요';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(values.startDate)) return '업무착수일 형식이 올바르지 않습니다 (YYYY-MM-DD)';
     if (!values.industry.trim()) return '업종을 입력하세요';
     if (values.bookkeepingFee < 0) return '기장료는 0 이상이어야 합니다';
     if (values.adjustmentFee < 0) return '조정료는 0 이상이어야 합니다';

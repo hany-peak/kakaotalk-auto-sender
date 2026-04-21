@@ -1,5 +1,5 @@
 import { WebClient } from '@slack/web-api';
-import { loadConfig } from './config';
+import type { NewClientConfig } from './config';
 import type { NewClientRecord } from './types';
 
 function formatWon(n: number): string {
@@ -61,9 +61,9 @@ export function buildBlocks(r: NewClientRecord): any[] {
  */
 export async function notifyNewClient(
   record: NewClientRecord,
+  cfg: NewClientConfig,
   logError: (msg: string) => void,
 ): Promise<boolean> {
-  const cfg = loadConfig();
   if (!cfg.slackBotToken) {
     logError('[new-client] SLACK_BOT_TOKEN not set — skipping slack notify');
     return false;
