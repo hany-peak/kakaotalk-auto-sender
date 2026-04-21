@@ -2,6 +2,7 @@ import type { MacroPagePlugin } from './types';
 import { vatNoticePlugin } from './vat-notice';
 import { kakaoSendPlugin } from './kakao-send';
 import { thebillSyncPlugin } from './thebill-sync';
+import { newClientPlugin } from './new-client';
 
 function PlaceholderPage() {
   return <div className="text-muted">준비 중...</div>;
@@ -11,6 +12,7 @@ export const plugins: MacroPagePlugin[] = [
   vatNoticePlugin,
   kakaoSendPlugin,
   thebillSyncPlugin,
+  newClientPlugin,
   {
     id: 'income-tax',
     name: '소득세 집계',
