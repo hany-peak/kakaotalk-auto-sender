@@ -217,6 +217,46 @@ export type ChecklistState = Partial<Record<ChecklistItemKey, ChecklistItemState
 - `value`: `value` 필드만 사용 (`status` 무시)
 - `note` 는 모든 kind에서 선택적으로 기록 가능
 
+### 등록 입력 확장
+
+기존 스펙(9개 필드)에 **2개 필드 추가 → 총 11개 필드**:
+
+```typescript
+export const TRANSFER_STATUSES = ['이관', '신규'] as const;
+export type TransferStatus = typeof TRANSFER_STATUSES[number];
+
+export const BIZ_REG_STATUSES = ['기존', '신규생성'] as const;
+export type BizRegStatus = typeof BIZ_REG_STATUSES[number];
+
+export interface NewClientInput {
+  companyName: string;
+  businessScope: BusinessScope;       // 기장 / 신고대리
+  representative: string;
+  startDate: string;
+  industry: string;
+  bookkeepingFee: number;
+  adjustmentFee: number;
+  inflowRoute: InflowRoute;           // 소개1 / 소개2 / 블로그
+  contractNote?: string;
+  transferStatus: TransferStatus;     // 신규 — 이관 / 신규
+  bizRegStatus: BizRegStatus;         // 신규 — 기존 / 신규생성
+}
+```
+
+**필드 의미:**
+- `transferStatus='이관'` — 다른 세무사무실에서 넘어오는 거래처 (이관자료 요청 필요)
+- `transferStatus='신규'` — 새로 개업한 사업자 (이관자료 없음, `transferData` 체크리스트는 "신규" 상태로 시작 가능)
+- `bizRegStatus='기존'` — 사업자등록증 이미 보유 (STEP 2 생략 가능, `businessLicense` 체크리스트는 "발급완료" 로 즉시 설정 가능)
+- `bizRegStatus='신규생성'` — 사업자등록 신청부터 필요 (STEP 2 진행 필요)
+
+**4가지 조합:**
+| transferStatus | bizRegStatus | 일반 시나리오 |
+|---------------|--------------|--------------|
+| 이관 | 기존 | 타 세무사에서 넘어오는 기존 사업자 (가장 흔함) |
+| 이관 | 신규생성 | 개업 중간에 세무사 이관 (드물지만 가능) |
+| 신규 | 기존 | 기존 사업자지만 당사와 첫 거래 |
+| 신규 | 신규생성 | 개업부터 전 과정 대행 |
+
 ### 확장된 레코드 타입
 
 ```typescript

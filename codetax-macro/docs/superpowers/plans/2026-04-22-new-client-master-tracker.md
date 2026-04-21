@@ -275,6 +275,12 @@ export type BusinessScope = typeof BUSINESS_SCOPES[number];
 export const INFLOW_ROUTES = ['소개1', '소개2', '블로그'] as const;
 export type InflowRoute = typeof INFLOW_ROUTES[number];
 
+export const TRANSFER_STATUSES = ['이관', '신규'] as const;
+export type TransferStatus = typeof TRANSFER_STATUSES[number];
+
+export const BIZ_REG_STATUSES = ['기존', '신규생성'] as const;
+export type BizRegStatus = typeof BIZ_REG_STATUSES[number];
+
 export interface NewClientInput {
   companyName: string;
   businessScope: BusinessScope;
@@ -285,6 +291,8 @@ export interface NewClientInput {
   adjustmentFee: number;
   inflowRoute: InflowRoute;
   contractNote?: string;
+  transferStatus: TransferStatus;  // 이관 / 신규
+  bizRegStatus: BizRegStatus;      // 기존 / 신규생성
 }
 
 export interface NewClientRecord extends NewClientInput {
@@ -522,12 +530,16 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 현재 `validate.ts` 파일의 끝에 아래 코드를 추가한다. (기존 `validateInput` 함수는 변경하지 않음)
 
+기존 `validateInput` 함수도 두 신규 enum 필드(`transferStatus`, `bizRegStatus`) 를 검증하도록 확장한다.
+
 기존 import 블록을 다음으로 교체:
 
 ```typescript
 import {
   BUSINESS_SCOPES,
   INFLOW_ROUTES,
+  TRANSFER_STATUSES,
+  BIZ_REG_STATUSES,
   type NewClientInput,
 } from './types';
 import {
@@ -535,6 +547,26 @@ import {
   type ChecklistItemKey,
   type ChecklistItemDefinition,
 } from './checklist-config';
+```
+
+기존 `validateInput` 함수에서 `contractNote` 처리 직전에 아래 두 enum 검증을 추가하고, 최종 return 블록의 value 객체에도 두 필드를 포함시킨다:
+
+```typescript
+  const transferStatus = b.transferStatus;
+  if (typeof transferStatus !== 'string' || !TRANSFER_STATUSES.includes(transferStatus as any)) {
+    return { ok: false, error: 'invalid transferStatus' };
+  }
+
+  const bizRegStatus = b.bizRegStatus;
+  if (typeof bizRegStatus !== 'string' || !BIZ_REG_STATUSES.includes(bizRegStatus as any)) {
+    return { ok: false, error: 'invalid bizRegStatus' };
+  }
+```
+
+그리고 최종 return 문의 value 객체 끝에 추가:
+```typescript
+      transferStatus: transferStatus as NewClientInput['transferStatus'],
+      bizRegStatus: bizRegStatus as NewClientInput['bizRegStatus'],
 ```
 
 파일 끝에 추가:
@@ -821,7 +853,7 @@ Run the following curl commands in order and check output:
 # 1. Register a new client (should return 200)
 curl -s -X POST http://localhost:3001/api/new-client/submit \
   -H 'Content-Type: application/json' \
-  -d '{"companyName":"테스트거래처","businessScope":"기장","representative":"홍길동","startDate":"2026-05-01","industry":"제조업","bookkeepingFee":300000,"adjustmentFee":500000,"inflowRoute":"블로그"}'
+  -d '{"companyName":"테스트거래처","businessScope":"기장","representative":"홍길동","startDate":"2026-05-01","industry":"제조업","bookkeepingFee":300000,"adjustmentFee":500000,"inflowRoute":"블로그","transferStatus":"신규","bizRegStatus":"기존"}'
 ```
 Expected: `{"ok":true,"id":"<uuid>","slackNotified":<bool>}`
 
@@ -966,6 +998,8 @@ export type ChecklistState = Partial<Record<ChecklistItemKey, ChecklistItemState
 
 export type BusinessScope = '기장' | '신고대리';
 export type InflowRoute = '소개1' | '소개2' | '블로그';
+export type TransferStatus = '이관' | '신규';
+export type BizRegStatus = '기존' | '신규생성';
 
 export interface NewClientInput {
   companyName: string;
@@ -977,6 +1011,8 @@ export interface NewClientInput {
   adjustmentFee: number;
   inflowRoute: InflowRoute;
   contractNote?: string;
+  transferStatus: TransferStatus;
+  bizRegStatus: BizRegStatus;
 }
 
 export interface NewClientRecord extends NewClientInput {
@@ -1276,10 +1312,12 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 import { useState, type FormEvent } from 'react';
 import { useApi } from '../../../core/hooks/useApi';
-import type { BusinessScope, InflowRoute } from '../types';
+import type { BusinessScope, InflowRoute, TransferStatus, BizRegStatus } from '../types';
 
 const BUSINESS_SCOPES: BusinessScope[] = ['기장', '신고대리'];
 const INFLOW_ROUTES: InflowRoute[] = ['소개1', '소개2', '블로그'];
+const TRANSFER_STATUSES: TransferStatus[] = ['이관', '신규'];
+const BIZ_REG_STATUSES: BizRegStatus[] = ['기존', '신규생성'];
 
 interface Props {
   onSuccess: (id: string, slackNotified: boolean) => void;
@@ -1305,6 +1343,8 @@ export function NewClientForm({ onSuccess, onCancel }: Props) {
   const [bookkeepingFee, setBookkeepingFee] = useState('');
   const [adjustmentFee, setAdjustmentFee] = useState('');
   const [inflowRoute, setInflowRoute] = useState<InflowRoute>('블로그');
+  const [transferStatus, setTransferStatus] = useState<TransferStatus>('신규');
+  const [bizRegStatus, setBizRegStatus] = useState<BizRegStatus>('기존');
   const [contractNote, setContractNote] = useState('');
 
   async function handleSubmit(e: FormEvent) {
@@ -1321,6 +1361,8 @@ export function NewClientForm({ onSuccess, onCancel }: Props) {
         bookkeepingFee: Number(bookkeepingFee) || 0,
         adjustmentFee: Number(adjustmentFee) || 0,
         inflowRoute,
+        transferStatus,
+        bizRegStatus,
         contractNote: contractNote.trim() || undefined,
       };
       const res = await api.post<SubmitResponse>('/new-client/submit', body);
@@ -1372,6 +1414,19 @@ export function NewClientForm({ onSuccess, onCancel }: Props) {
           {INFLOW_ROUTES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </Field>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="이관여부" required>
+          <select className={inputCls} value={transferStatus} onChange={(e) => setTransferStatus(e.target.value as TransferStatus)}>
+            {TRANSFER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Field>
+        <Field label="사업자 생성여부" required>
+          <select className={inputCls} value={bizRegStatus} onChange={(e) => setBizRegStatus(e.target.value as BizRegStatus)}>
+            {BIZ_REG_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Field>
+      </div>
 
       <Field label="계약특이사항">
         <textarea className={inputCls} rows={3} value={contractNote} onChange={(e) => setContractNote(e.target.value)} />
@@ -1971,7 +2026,7 @@ cd /Users/hany/workzone/codetax-macro/jeeves && npm run dev:client
 
 1. 사이드바에서 "신규 수임처" 클릭 → 빈 목록 또는 기존 등록 목록 확인
 2. "+ 신규 등록" 클릭 → 9개 필드 양식 표시 확인
-3. 모든 필드 입력 (업체명, 업무 범위, 대표자, 업무착수일, 업종, 기장료 300000, 조정료 500000, 유입경로, 계약특이사항) → "등록" 클릭
+3. 모든 필드 입력 (업체명, 업무 범위, 대표자, 업무착수일, 업종, 기장료 300000, 조정료 500000, 유입경로, **이관여부**=이관, **사업자 생성여부**=기존, 계약특이사항) → "등록" 클릭
 4. 토스트 메시지 "등록 완료" 확인 → 목록으로 복귀 → 새 거래처 행 진행률 **0/19** 확인
 5. 새 거래처 행 클릭 → 상세 페이지 진입 → 상단 진행률 0/19 확인 → 등록 정보 카드 확인 → 체크리스트 19개 행 표시 확인
 6. 카톡방 체크박스 체크 → "저장 중..." 후 "갱신 시간" 업데이트 확인 → 상단 진행률 1/19
