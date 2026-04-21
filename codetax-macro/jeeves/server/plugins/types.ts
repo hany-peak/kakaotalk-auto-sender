@@ -33,12 +33,30 @@ export interface ServerContext {
   logError: LogFn;
 }
 
+export interface RunResult {
+  status: 'success' | 'error';
+  startedAt: string;
+  finishedAt: string;
+  durationMs: number;
+  summary: string;
+  error?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface PluginSchedule {
+  defaultCron: string;
+  defaultEnabled: boolean;
+  timezone: string;
+  run: (ctx: ServerContext) => Promise<RunResult>;
+}
+
 export interface MacroPlugin {
   id: string;
   name: string;
   icon: string;
   status: 'ready' | 'coming-soon';
   registerRoutes(app: Express, ctx: ServerContext): void;
+  schedule?: PluginSchedule;
 }
 
 export type RequestHandler = (req: Request, res: Response, next: NextFunction) => Promise<void> | void;

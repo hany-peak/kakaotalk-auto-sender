@@ -7,6 +7,7 @@ import { createLogger } from './core/logger';
 import { plugins } from './plugins';
 import type { ServerContext } from './plugins/types';
 import { BASE_DOWNLOAD_DIR } from './plugins/vat-notice/config';
+import { scheduler } from './scheduler';
 
 const app = express();
 const PORT = 3001;
@@ -81,6 +82,20 @@ app.post('/api/logout', async (_req, res) => {
 // Register all plugin routes
 for (const plugin of plugins) {
   plugin.registerRoutes(app, ctx);
+}
+
+// Scheduler subsystem
+scheduler.registerRoutes(app, ctx);
+scheduler.initialize(plugins, ctx).catch((err) => {
+  logError(`scheduler initialize failed: ${err.message}`);
+});
+
+for (const sig of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(sig, async () => {
+    await scheduler.shutdown();
+    await session.close().catch(() => {});
+    process.exit(0);
+  });
 }
 
 // SPA fallback
