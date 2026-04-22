@@ -53,6 +53,7 @@ export interface NewClientRecord extends NewClientInput {
   id: string;
   createdAt: string; // ISO 8601
   checklist: ChecklistState;
+  airtableRecordId?: string; // 등록 시 Airtable 에 생성된 레코드 ID. 없으면 역동기화 불가.
 }
 
 export interface SubmitResponse {

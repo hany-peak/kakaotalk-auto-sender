@@ -7,9 +7,10 @@ import {
   readOne,
   append,
   updateChecklistItem,
+  setAirtableRecordId,
 } from './storage';
 import { notifyNewClient } from './slack';
-import { syncToAirtable } from './airtable';
+import { syncToAirtable, updateAirtableChecklist } from './airtable';
 import {
   computeProgress,
   latestChecklistUpdate,
@@ -34,7 +35,15 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
 
     ctx.log(`[new-client] registered: ${record.companyName}`);
     const slackNotified = await notifyNewClient(record, cfg, ctx.logError);
-    const airtableSynced = await syncToAirtable(record, cfg, ctx.logError);
+    const airtableRecordId = await syncToAirtable(record, cfg, ctx.logError);
+    const airtableSynced = airtableRecordId !== null;
+    if (airtableRecordId) {
+      try {
+        await setAirtableRecordId(cfg.dataFile, record.id, airtableRecordId);
+      } catch (err: any) {
+        ctx.logError(`[new-client] failed to persist airtableRecordId: ${err.message || err}`);
+      }
+    }
     return res.json({ ok: true, id: record.id, slackNotified, airtableSynced });
   });
 
@@ -93,6 +102,21 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
             ? `value=${updated.value ?? ''}`
             : `status=${updated.status ?? ''}`),
       );
+
+      // Reverse sync to Airtable if this item has a mapping and the record was
+      // originally synced. Non-blocking: failures are logged but don't affect
+      // the PATCH response.
+      const record = await readOne(cfg.dataFile, req.params.id);
+      if (record?.airtableRecordId) {
+        await updateAirtableChecklist(
+          record.airtableRecordId,
+          req.params.itemKey as ChecklistItemKey,
+          updated,
+          cfg,
+          ctx.logError,
+        );
+      }
+
       res.json({ ok: true, itemKey: req.params.itemKey, state: updated });
     } catch (err: any) {
       ctx.logError(`[new-client] checklist update failed: ${err.message || err}`);

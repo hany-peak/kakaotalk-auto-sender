@@ -50,6 +50,18 @@ export async function append(
   return record;
 }
 
+export async function setAirtableRecordId(
+  file: string,
+  id: string,
+  airtableRecordId: string,
+): Promise<void> {
+  const all = await readAll(file);
+  const idx = all.findIndex((r) => r.id === id);
+  if (idx < 0) return;
+  all[idx].airtableRecordId = airtableRecordId;
+  await fs.promises.writeFile(file, JSON.stringify(all, null, 2), 'utf-8');
+}
+
 export interface ChecklistUpdatePayload {
   status?: string;
   value?: string;
