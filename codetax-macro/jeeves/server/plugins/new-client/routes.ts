@@ -9,6 +9,7 @@ import {
   updateChecklistItem,
 } from './storage';
 import { notifyNewClient } from './slack';
+import { syncToAirtable } from './airtable';
 import {
   computeProgress,
   latestChecklistUpdate,
@@ -33,7 +34,8 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
 
     ctx.log(`[new-client] registered: ${record.companyName}`);
     const slackNotified = await notifyNewClient(record, cfg, ctx.logError);
-    return res.json({ ok: true, id: record.id, slackNotified });
+    const airtableSynced = await syncToAirtable(record, cfg, ctx.logError);
+    return res.json({ ok: true, id: record.id, slackNotified, airtableSynced });
   });
 
   app.get('/api/new-client/list', async (_req, res) => {
