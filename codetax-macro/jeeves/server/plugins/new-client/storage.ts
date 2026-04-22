@@ -69,6 +69,24 @@ export async function setAirtableRecordId(
   await fs.promises.writeFile(file, JSON.stringify(all, null, 2), 'utf-8');
 }
 
+/**
+ * 여러 체크리스트 항목을 한 번에 병합 저장한다. 업데이트된 레코드(없으면 null).
+ */
+export async function mergeChecklist(
+  file: string,
+  id: string,
+  patch: Partial<Record<ChecklistItemKey, ChecklistItemState>>,
+): Promise<NewClientRecord | null> {
+  const all = await readAll(file);
+  const idx = all.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const record = all[idx];
+  record.checklist = { ...record.checklist, ...patch };
+  all[idx] = record;
+  await fs.promises.writeFile(file, JSON.stringify(all, null, 2), 'utf-8');
+  return record;
+}
+
 export interface ChecklistUpdatePayload {
   status?: string;
   value?: string;

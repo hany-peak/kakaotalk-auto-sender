@@ -8,9 +8,10 @@ import {
   append,
   updateChecklistItem,
   setAirtableRecordId,
+  mergeChecklist,
 } from './storage';
 import { notifyNewClient } from './slack';
-import { syncToAirtable, updateAirtableChecklist } from './airtable';
+import { syncToAirtable, updateAirtableChecklist, pullFromAirtable } from './airtable';
 import {
   computeProgress,
   latestChecklistUpdate,
@@ -71,8 +72,29 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
   app.get('/api/new-client/:id', async (req, res) => {
     const cfg = loadConfig();
     try {
-      const record = await readOne(cfg.dataFile, req.params.id);
+      let record = await readOne(cfg.dataFile, req.params.id);
       if (!record) return res.status(404).json({ error: 'not found' });
+
+      // Airtable 에 연결된 레코드면 현재 값을 당겨와서 checklist 에 반영한다.
+      // Airtable 실패 시 조용히 로컬 상태만 반환 (네트워크 이슈 등에 그레이스풀).
+      if (record.airtableRecordId) {
+        const patch = await pullFromAirtable(
+          record.airtableRecordId,
+          record.checklist,
+          cfg,
+          ctx.logError,
+        );
+        if (patch && Object.keys(patch).length > 0) {
+          const merged = await mergeChecklist(cfg.dataFile, record.id, patch);
+          if (merged) {
+            record = merged;
+            ctx.log(
+              `[new-client] pulled from airtable: id=${record.id} items=${Object.keys(patch).join(',')}`,
+            );
+          }
+        }
+      }
+
       res.json(record);
     } catch (err: any) {
       ctx.logError(`[new-client] read failed: ${err.message || err}`);
