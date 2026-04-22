@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isItemDone } from '../types';
+import { KATALK_TEMPLATES } from '../katalkTemplates';
 import type {
   ChecklistItemDefinition,
   ChecklistItemState,
@@ -25,11 +26,24 @@ export function ChecklistItemRow({ def, state, pending, onUpdate }: Props) {
   const [localValue, setLocalValue] = useState<string>(state?.value ?? '');
   const [localNote, setLocalNote] = useState<string>(state?.note ?? '');
   const [err, setErr] = useState<string | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   useEffect(() => {
     setLocalValue(state?.value ?? '');
     setLocalNote(state?.note ?? '');
   }, [state?.value, state?.note]);
+
+  async function copyTemplate(idx: number, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(idx);
+      window.setTimeout(() => {
+        setCopiedIdx((cur) => (cur === idx ? null : cur));
+      }, 1500);
+    } catch {
+      setErr('복사 실패 (브라우저 권한 확인)');
+    }
+  }
 
   async function submitStatus(next: string) {
     setErr(null);
@@ -55,7 +69,27 @@ export function ChecklistItemRow({ def, state, pending, onUpdate }: Props) {
         {def.step ? `STEP ${def.step}` : ''}
       </td>
       <td className="py-2 pr-3 font-medium whitespace-nowrap">{def.label}</td>
-      <td className="py-2 pr-3 text-xs text-muted">{def.description ?? ''}</td>
+      <td className="py-2 pr-3 text-xs text-muted">
+        <div>{def.description ?? ''}</div>
+        {def.key === 'katalkRoom' && (
+          <div className="flex gap-1 mt-1 flex-wrap">
+            {KATALK_TEMPLATES.map((t, i) => (
+              <button
+                key={t.label}
+                type="button"
+                onClick={() => copyTemplate(i, t.text)}
+                className={`px-2 py-0.5 rounded text-[11px] border transition-colors ${
+                  copiedIdx === i
+                    ? 'border-success text-success bg-success/10'
+                    : 'border-border text-text hover:bg-surface2'
+                }`}
+              >
+                {copiedIdx === i ? '복사됨 ✓' : t.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </td>
       <td className="py-2 pr-3">
         {renderEditor(def, state, localValue, setLocalValue, submitStatus, submitValue)}
         {err && <div className="text-danger text-xs mt-1">{err}</div>}
