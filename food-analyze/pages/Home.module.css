@@ -1,0 +1,203 @@
+/* General Container */
+.container {
+  max-width: 90rem; /* Equivalent to container mx-auto roughly */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem; /* p-4 */
+}
+
+.title {
+  font-size: 1.875rem; /* text-3xl */
+  line-height: 2.25rem;
+  font-weight: 700; /* font-bold */
+  margin-bottom: 2rem; /* mb-8 */
+  text-align: center;
+}
+
+/* Grid Chart Container */
+.gridContainer {
+  position: relative;
+  overflow: auto; /* Allow both horizontal and vertical scroll */
+  max-height: 80vh; /* Limit container height, adjust as needed */
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow-sm */
+}
+
+.grid {
+  display: grid;
+  align-items: stretch;
+  /* min-width: max-content; Removed to allow shrinking */
+}
+
+/* Header Row */
+.headerCell,
+.monthHeaderCell {
+  position: sticky;
+  top: 0;
+  background-color: #f9fafb; /* bg-gray-100 / bg-gray-50 */
+  border-bottom: 1px solid #d1d5db; /* border-gray-300 */
+  border-right: 1px solid #d1d5db;
+  padding: 0.75rem; /* p-3 */
+  font-weight: 600; /* font-semibold */
+  z-index: 30; /* Highest z-index for headers */
+}
+
+.headerCell {
+  left: 0; /* sticky left */
+  /* z-index: 30; Inherited */
+  text-align: left;
+  display: flex;
+  align-items: center;
+  min-width: 12rem; /* Ensure product name column has enough width (w-48) */
+}
+
+.monthHeaderCell {
+  /* z-index: 20; Below main header */
+  text-align: center;
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+  color: #4b5563; /* text-gray-600 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* min-width: 4rem; Removed to allow shrinking */
+}
+
+.monthHeaderCell:last-child {
+  border-right: none;
+}
+
+/* Category Header Row */
+.categoryHeaderCell {
+  position: sticky;
+  left: 0;
+  padding: 0.5rem; /* p-2 */
+  text-align: left;
+  font-weight: 600; /* font-semibold */
+  border-bottom: 1px solid; /* Default, color added by variant */
+  border-top: 1px solid; /* Default, color added by variant */
+  z-index: 25; /* Above product rows, below main headers */
+}
+
+/* Product Row Cells */
+.productNameCell {
+  position: sticky;
+  left: 0;
+  border-bottom: 1px solid; /* Default, color added by variant */
+  border-right: 1px solid; /* Default, color added by variant */
+  padding: 0.6rem 0.5rem 0.6rem 1rem; /* Adjusted vertical padding */
+  font-weight: 500; /* font-medium */
+  font-size: 1rem; /* Increased font size (text-base) */
+  z-index: 10; /* Base z-index for row content */
+  display: flex;
+  align-items: center;
+  min-height: 3rem; /* Increased min-height (h-12) */
+}
+
+.monthBackgroundCell {
+  border-bottom: 1px solid; /* Default, color added by variant */
+  border-right: 1px solid; /* Default, color added by variant */
+  min-height: 3rem; /* Match productNameCell min-height */
+  z-index: 1; /* Ensure it's behind the season bar */
+}
+
+.monthBackgroundCell:last-child {
+  border-right: none;
+}
+
+/* Season Bar */
+.seasonBar {
+  z-index: 10; /* Position above background cells */
+  display: flex; 
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem; 
+  padding: 0.375rem; 
+  font-size: 1rem; 
+  line-height: 1.5rem; 
+  font-weight: 600; 
+  overflow: hidden; 
+  white-space: nowrap; 
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+  margin: 1px; /* Add small margin so border doesn't fully overlap */
+}
+
+/* --- Category Variants --- */
+
+/* Fruit */
+.categoryHeaderFruit {
+  background-color: #fee2e2; /* bg-red-100 */
+  color: #991b1b; /* text-red-900 approximation */
+  border-color: #fecaca; /* border-red-200 */
+}
+.productNameFruit,
+.monthBackgroundFruit {
+  background-color: rgba(254, 242, 242, 0.3); /* bg-red-50/30 */
+  color: #991b1b;
+  border-color: #fecaca;
+}
+.seasonBarFruit {
+  background-color: #f87171; /* bg-red-400 */
+  color: black; /* Restore color */
+}
+
+/* Vegetable */
+.categoryHeaderVegetable {
+  background-color: #dcfce7; /* bg-green-100 */
+  color: #14532d; /* text-green-900 approximation */
+  border-color: #bbf7d0; /* border-green-200 */
+}
+.productNameVegetable,
+.monthBackgroundVegetable {
+  background-color: rgba(240, 253, 244, 0.3); /* bg-green-50/30 */
+  color: #14532d;
+  border-color: #bbf7d0;
+}
+.seasonBarVegetable {
+  background-color: #4ade80; /* bg-green-500 approximation */
+  color: black; /* Restore color */
+}
+
+/* Other */
+.categoryHeaderOther {
+  background-color: #fef9c3; /* bg-yellow-100 */
+  color: #713f12; /* text-yellow-900 approximation */
+  border-color: #fde68a; /* border-yellow-200 */
+}
+.productNameOther,
+.monthBackgroundOther {
+  background-color: rgba(254, 252, 232, 0.3); /* bg-yellow-50/30 */
+  color: #713f12;
+  border-color: #fde68a;
+}
+.seasonBarOther {
+  background-color: #facc15; /* bg-yellow-500 approximation */
+  color: black; /* Restore color */
+}
+
+/* Filter Styles */
+.filterContainer {
+  margin-bottom: 1.5rem; /* mb-6 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem; /* gap-2 */
+}
+
+.filterLabel {
+  font-weight: 500; /* font-medium */
+}
+
+.filterSelect {
+  padding: 0.5rem 1rem; /* py-2 px-4 */
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.375rem; /* rounded-md */
+  background-color: white;
+}
+
+/* Selected Month Header Highlight */
+.selectedMonthHeader {
+  background-color: #e0e7ff; /* bg-indigo-100 (example) */
+  font-weight: 700; /* font-bold */
+} 

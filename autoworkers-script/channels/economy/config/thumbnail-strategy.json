@@ -1,0 +1,26 @@
+{
+  "count": 3,
+  "art_styles": ["anime", "졸라맨 웹툰 스타일 — 단순한 선, 과장된 몸짓과 표정"],
+  "color_palette": "dark",
+  "emotions": ["shock", "tension"],
+  "text_space": "bottom-half",
+  "face_style": "auto",
+  "brand": {
+    "colors": [],
+    "mascot": true,
+    "fixed_layout": null
+  },
+  "benchmark_analysis": {
+    "source_urls": [
+      "https://www.youtube.com/watch?v=63ND32SUxcs",
+      "https://www.youtube.com/watch?v=Xa7tyMjUil4",
+      "https://www.youtube.com/watch?v=TCTIrBk7AWc"
+    ],
+    "style": "반실사 일러스트 — 실제 인물(트럼프, 이재용 등)을 애니메 스타일로 표현, 사실적 배경(항공모함, 폭발, 미사일)과 혼합",
+    "color": "다크/시네마틱 — 어두운 배경에 폭발·전쟁 장면, 강한 색 대비",
+    "text_placement": "하단 1/2 영역에 크고 굵은 한국어 텍스트, 흰색 + 노란색 강조",
+    "composition": "인물 좌측 배치 + 시네마틱 배경 우측/전체 + 텍스트 하단 레이어드",
+    "emotions": "위기/긴장 + 충격/놀라움 — 설정값과 일치",
+    "notes": "실제 뉴스 인물을 일러스트로 표현하는 것이 핵심 특징. 배경은 해당 이슈를 시각화하는 실사/CG 혼합"
+  }
+}

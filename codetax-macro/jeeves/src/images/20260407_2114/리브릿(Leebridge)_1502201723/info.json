@@ -1,0 +1,13 @@
+{
+  "name": "리브릿(Leebridge)",
+  "bizNo": "150-22-01723",
+  "taxAmount": 2380000,
+  "groupName": "1502201723",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:16:02.679Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:47:11.296Z",
+  "updatedAt": "2026-04-08T03:45:41.009Z"
+}

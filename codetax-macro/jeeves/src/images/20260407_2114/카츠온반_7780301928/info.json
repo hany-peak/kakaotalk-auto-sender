@@ -1,0 +1,13 @@
+{
+  "name": "카츠온반",
+  "bizNo": "778-03-01928",
+  "taxAmount": 4528000,
+  "groupName": "7780301928",
+  "taxList": [],
+  "status": "done",
+  "savedAt": "2026-04-07T12:17:44.760Z",
+  "ocrStatus": "warn",
+  "ocrNote": "1천원 차이",
+  "ocrVerifiedAt": "2026-04-07T12:47:20.873Z",
+  "updatedAt": "2026-04-08T03:14:35.714Z"
+}

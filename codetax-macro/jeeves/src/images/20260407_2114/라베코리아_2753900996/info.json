@@ -1,0 +1,13 @@
+{
+  "name": "라베코리아",
+  "bizNo": "275-39-00996",
+  "taxAmount": 7388000,
+  "groupName": "2753900996",
+  "taxList": [],
+  "status": "done",
+  "savedAt": "2026-04-07T12:15:29.393Z",
+  "ocrStatus": "warn",
+  "ocrNote": "세액 불일치",
+  "ocrVerifiedAt": "2026-04-07T12:59:32.600Z",
+  "updatedAt": "2026-04-08T03:04:52.665Z"
+}
