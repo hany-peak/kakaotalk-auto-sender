@@ -2,6 +2,7 @@ export type ChecklistItemKey =
   | 'katalkRoom'
   | 'businessLicense'
   | 'transferData'
+  | 'dropboxFolder'
   | 'hometaxCredentials'
   | 'wehago'
   | 'bookkeepingFeeConfirmed'
@@ -54,9 +55,13 @@ export const CHECKLIST_ITEMS: ChecklistItemDefinition[] = [
     states: ['none', '기존발급', '자료요청', '접수완료', '발급완료'],
     doneStates: ['기존발급', '발급완료'],
     description: '사업자등록 신청·발급 진행 상태' },
-  { key: 'transferData', label: '이관자료', step: 3, kind: 'enum',
+  { key: 'transferData', label: '이관자료 요청', step: 3, kind: 'enum',
     states: ['none', '신규', '요청', '백업완료'],
-    description: '신규/요청/백업완료 — 드롭박스 기장 거래처 폴더 생성' },
+    doneStates: ['신규', '백업완료'],
+    description: '신규(해당없음) / 요청(이관사무실에 자료요청) / 백업완료(위하고 백업 완료)' },
+  { key: 'dropboxFolder', label: '드롭박스 생성', step: 3, kind: 'binary',
+    states: ['none', 'done'],
+    description: '드롭박스 기장 거래처 폴더 생성 (2.기장/업체명)' },
   { key: 'hometaxCredentials', label: '홈택스 ID/PW', kind: 'binary',
     states: ['none', 'done'],
     description: '거래처에게 전달받아 기재, 정상 로그인 확인' },

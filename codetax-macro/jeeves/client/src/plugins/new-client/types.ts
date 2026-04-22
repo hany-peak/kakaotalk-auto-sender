@@ -2,11 +2,11 @@
 // types.ts 와 동기화되어야 한다. 향후 공유 패키지로 추출 검토.
 
 export type ChecklistItemKey =
-  | 'katalkRoom' | 'businessLicense' | 'transferData' | 'hometaxCredentials'
-  | 'wehago' | 'bookkeepingFeeConfirmed' | 'contract' | 'feeBillingDate'
-  | 'paymentMethod' | 'cms' | 'hometaxDelegation' | 'ediDelegation'
-  | 'businessAccount' | 'creditCard' | 'cashReceiptStore' | 'assignee'
-  | 'wemembers' | 'semoreport' | 'onboardingComplete';
+  | 'katalkRoom' | 'businessLicense' | 'transferData' | 'dropboxFolder'
+  | 'hometaxCredentials' | 'wehago' | 'bookkeepingFeeConfirmed' | 'contract'
+  | 'feeBillingDate' | 'paymentMethod' | 'cms' | 'hometaxDelegation'
+  | 'ediDelegation' | 'businessAccount' | 'creditCard' | 'cashReceiptStore'
+  | 'assignee' | 'wemembers' | 'semoreport' | 'onboardingComplete';
 
 export type ItemKind = 'binary' | 'enum' | 'value';
 export type ValueKind = 'text' | 'date';
@@ -99,9 +99,13 @@ export const CHECKLIST_ITEMS: ChecklistItemDefinition[] = [
     states: ['none', '기존발급', '자료요청', '접수완료', '발급완료'],
     doneStates: ['기존발급', '발급완료'],
     description: '사업자등록 신청·발급 진행 상태' },
-  { key: 'transferData', label: '이관자료', step: 3, kind: 'enum',
+  { key: 'transferData', label: '이관자료 요청', step: 3, kind: 'enum',
     states: ['none', '신규', '요청', '백업완료'],
-    description: '드롭박스 기장 거래처 폴더 생성' },
+    doneStates: ['신규', '백업완료'],
+    description: '신규(해당없음) / 요청 / 백업완료' },
+  { key: 'dropboxFolder', label: '드롭박스 생성', step: 3, kind: 'binary',
+    states: ['none', 'done'],
+    description: '드롭박스 기장 거래처 폴더 생성 (2.기장/업체명)' },
   { key: 'hometaxCredentials', label: '홈택스 ID/PW', kind: 'binary',
     states: ['none', 'done'], description: '거래처에게 전달받아 기재' },
   { key: 'wehago', label: '위하고', step: 4, kind: 'binary',
