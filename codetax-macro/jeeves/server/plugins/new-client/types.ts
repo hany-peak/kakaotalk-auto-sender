@@ -22,18 +22,31 @@ export type TransferStatus = typeof TRANSFER_STATUSES[number];
 export const BIZ_REG_STATUSES = ['기존', '신규생성'] as const;
 export type BizRegStatus = typeof BIZ_REG_STATUSES[number];
 
+export const INDUSTRIES = [
+  '건설업',
+  '제조업',
+  '도소매업',
+  '음식점업',
+  '부동산업',
+  '서비스업',
+  '정보통신업',
+] as const;
+export type Industry = typeof INDUSTRIES[number];
+
 export interface NewClientInput {
   companyName: string;
   businessScope: BusinessScope;
   representative: string;
   startDate: string; // YYYY-MM-DD
-  industry: string;
+  industry: Industry;
   bookkeepingFee: number;
   adjustmentFee: number;
   inflowRoute: InflowRoute;
   contractNote?: string;
   transferStatus: TransferStatus;
   bizRegStatus: BizRegStatus;
+  transferSourceOffice?: string;
+  transferReason?: string;
 }
 
 export interface NewClientRecord extends NewClientInput {
@@ -46,6 +59,7 @@ export interface SubmitResponse {
   ok: true;
   id: string;
   slackNotified: boolean;
+  airtableSynced: boolean;
 }
 
 export interface ErrorResponse {
