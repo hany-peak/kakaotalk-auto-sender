@@ -97,6 +97,12 @@ const REVERSE_MAPPINGS: Partial<Record<ChecklistItemKey, ReverseMapping>> = {
     airtableField: '카톡방',
     transform: (s) => s.status === 'done',
   },
+  businessLicense: {
+    airtableField: '사업자등록증',
+    // jeeves 상태 중 'none' 은 Airtable 에서는 빈값(null) 로 처리.
+    // 그 외(기존발급/자료요청/접수완료/발급완료) 는 그대로 전달.
+    transform: (s) => (!s.status || s.status === 'none' ? null : s.status),
+  },
 };
 
 /**

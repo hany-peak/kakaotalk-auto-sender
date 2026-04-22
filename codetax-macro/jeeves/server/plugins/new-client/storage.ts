@@ -35,11 +35,18 @@ export async function append(
   file: string,
   input: NewClientInput,
 ): Promise<NewClientRecord> {
+  const now = new Date().toISOString();
+  const checklist: NewClientRecord['checklist'] = {};
+  // bizRegStatus='기존' 이면 사업자등록증 체크리스트를 '기존발급' 으로 선반영.
+  // doneStates 에 '기존발급' 이 포함되어 있어 이 상태도 완료로 집계됨.
+  if (input.bizRegStatus === '기존') {
+    checklist.businessLicense = { status: '기존발급', updatedAt: now };
+  }
   const record: NewClientRecord = {
     ...input,
     id: randomUUID(),
-    createdAt: new Date().toISOString(),
-    checklist: {},
+    createdAt: now,
+    checklist,
   };
 
   await fs.promises.mkdir(path.dirname(file), { recursive: true });

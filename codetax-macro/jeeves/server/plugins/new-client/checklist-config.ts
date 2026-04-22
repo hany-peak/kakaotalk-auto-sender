@@ -30,6 +30,11 @@ export interface ChecklistItemDefinition {
   states?: string[];
   valueKind?: ValueKind;
   description?: string;
+  /**
+   * 완료로 간주되는 상태 목록. 미지정 시 `states` 의 마지막 값만 완료로 판정.
+   * 예: 사업자등록증은 '기존발급' 또는 '발급완료' 둘 다 완료.
+   */
+  doneStates?: string[];
 }
 
 export interface ChecklistItemState {
@@ -46,7 +51,8 @@ export const CHECKLIST_ITEMS: ChecklistItemDefinition[] = [
     states: ['none', 'done'],
     description: '단톡방 개설 후 체크 (정세무사님+과장님+지원팀)' },
   { key: 'businessLicense', label: '사업자등록증', step: 2, kind: 'enum',
-    states: ['none', '자료요청', '접수완료', '발급완료'],
+    states: ['none', '기존발급', '자료요청', '접수완료', '발급완료'],
+    doneStates: ['기존발급', '발급완료'],
     description: '사업자등록 신청·발급 진행 상태' },
   { key: 'transferData', label: '이관자료', step: 3, kind: 'enum',
     states: ['none', '신규', '요청', '백업완료'],
@@ -115,8 +121,9 @@ export function isItemDone(
   if (def.kind === 'value') {
     return typeof state.value === 'string' && state.value.trim() !== '';
   }
-  const states = def.states!;
-  return state.status === states[states.length - 1];
+  if (state.status === undefined) return false;
+  const doneStates = def.doneStates ?? [def.states![def.states!.length - 1]];
+  return doneStates.includes(state.status);
 }
 
 export function computeProgress(
