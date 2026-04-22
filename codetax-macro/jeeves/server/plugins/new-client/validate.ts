@@ -3,6 +3,7 @@ import {
   INFLOW_ROUTES,
   TRANSFER_STATUSES,
   BIZ_REG_STATUSES,
+  INDUSTRIES,
   type NewClientInput,
 } from './types';
 import {
@@ -35,8 +36,10 @@ export function validateInput(body: unknown): ValidationResult {
   const representative = requireString('representative');
   if (!representative) return { ok: false, error: 'missing: representative' };
 
-  const industry = requireString('industry');
-  if (!industry) return { ok: false, error: 'missing: industry' };
+  const industry = b.industry;
+  if (typeof industry !== 'string' || !INDUSTRIES.includes(industry as any)) {
+    return { ok: false, error: 'invalid industry' };
+  }
 
   const startDate = requireString('startDate');
   if (!startDate) return { ok: false, error: 'missing: startDate' };
@@ -78,6 +81,18 @@ export function validateInput(body: unknown): ValidationResult {
       ? contractNoteRaw.trim()
       : undefined;
 
+  const transferSourceOfficeRaw = b.transferSourceOffice;
+  const transferSourceOffice =
+    typeof transferSourceOfficeRaw === 'string' && transferSourceOfficeRaw.trim() !== ''
+      ? transferSourceOfficeRaw.trim()
+      : undefined;
+
+  const transferReasonRaw = b.transferReason;
+  const transferReason =
+    typeof transferReasonRaw === 'string' && transferReasonRaw.trim() !== ''
+      ? transferReasonRaw.trim()
+      : undefined;
+
   return {
     ok: true,
     value: {
@@ -85,13 +100,15 @@ export function validateInput(body: unknown): ValidationResult {
       businessScope: businessScope as NewClientInput['businessScope'],
       representative,
       startDate,
-      industry,
+      industry: industry as NewClientInput['industry'],
       bookkeepingFee,
       adjustmentFee,
       inflowRoute: inflowRoute as NewClientInput['inflowRoute'],
       transferStatus: transferStatus as NewClientInput['transferStatus'],
       bizRegStatus: bizRegStatus as NewClientInput['bizRegStatus'],
       contractNote,
+      transferSourceOffice,
+      transferReason,
     },
   };
 }
