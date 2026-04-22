@@ -10,6 +10,9 @@ export interface NewClientConfig {
   slackBotToken: string | undefined;
   slackChannel: string | undefined;
   dataFile: string;
+  airtableNewClientPat: string | undefined;
+  airtableNewClientBaseId: string | undefined;
+  airtableNewClientTableName: string;
 }
 
 export function loadConfig(): NewClientConfig {
@@ -17,5 +20,8 @@ export function loadConfig(): NewClientConfig {
     slackBotToken: process.env.SLACK_BOT_TOKEN,
     slackChannel: process.env.SLACK_NEW_CLIENT_CHANNEL,
     dataFile: path.resolve(__dirname, '../../data/new-clients.json'),
+    airtableNewClientPat: process.env.AIRTABLE_NEW_CLIENT_PAT,
+    airtableNewClientBaseId: process.env.AIRTABLE_NEW_CLIENT_BASE_ID,
+    airtableNewClientTableName: process.env.AIRTABLE_NEW_CLIENT_TABLE_NAME || '거래처',
   };
 }
