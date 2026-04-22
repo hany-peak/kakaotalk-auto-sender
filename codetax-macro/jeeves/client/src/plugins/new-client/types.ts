@@ -35,18 +35,31 @@ export type InflowRoute = '소개1' | '소개2' | '블로그';
 export type TransferStatus = '이관' | '신규';
 export type BizRegStatus = '기존' | '신규생성';
 
+export const INDUSTRIES = [
+  '건설업',
+  '제조업',
+  '도소매업',
+  '음식점업',
+  '부동산업',
+  '서비스업',
+  '정보통신업',
+] as const;
+export type Industry = typeof INDUSTRIES[number];
+
 export interface NewClientInput {
   companyName: string;
   businessScope: BusinessScope;
   representative: string;
   startDate: string;
-  industry: string;
+  industry: Industry;
   bookkeepingFee: number;
   adjustmentFee: number;
   inflowRoute: InflowRoute;
   contractNote?: string;
   transferStatus: TransferStatus;
   bizRegStatus: BizRegStatus;
+  transferSourceOffice?: string;
+  transferReason?: string;
 }
 
 export interface NewClientRecord extends NewClientInput {
