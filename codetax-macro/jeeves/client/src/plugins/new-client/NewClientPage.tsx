@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { useApi } from '../../core/hooks/useApi';
 import { NewClientForm, type NewClientFormValues } from './components/NewClientForm';
+import { ClientListTable } from './components/ClientListTable';
+import { ChecklistTable } from './components/ChecklistTable';
+import { ProgressPill } from './components/ProgressPill';
+import { useClientList, useClientDetail } from './hooks/useNewClients';
+import { useChecklistUpdate } from './hooks/useChecklistUpdate';
+import { isItemDone, CHECKLIST_ITEMS } from './types';
+import type {
+  ChecklistItemKey,
+  ChecklistUpdateInput,
+  NewClientRecord,
+} from './types';
+
+type View = 'list' | 'detail' | 'register';
+type Toast = { kind: 'success' | 'warn' | 'error'; message: string } | null;
 
 interface SubmitResponse {
   ok: boolean;
@@ -8,14 +22,16 @@ interface SubmitResponse {
   slackNotified: boolean;
 }
 
-type Toast = { kind: 'success' | 'warn' | 'error'; message: string } | null;
-
 export function NewClientPage() {
   const api = useApi();
-  const [submitting, setSubmitting] = useState(false);
+  const [view, setView] = useState<View>('list');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(values: NewClientFormValues) {
+  const { list, loading: listLoading, error: listError, reload: reloadList } = useClientList();
+
+  async function handleRegister(values: NewClientFormValues) {
     setSubmitting(true);
     setToast(null);
     try {
@@ -24,14 +40,14 @@ export function NewClientPage() {
         contractNote: values.contractNote.trim() === '' ? undefined : values.contractNote,
       };
       const res = await api.post<SubmitResponse>('/new-client/submit', body);
-      if (res.slackNotified) {
-        setToast({ kind: 'success', message: '등록 완료 — Slack 알림 전송됨' });
-      } else {
-        setToast({
-          kind: 'warn',
-          message: '등록 완료 — Slack 알림 실패 (서버 로그 확인)',
-        });
-      }
+      setToast({
+        kind: res.slackNotified ? 'success' : 'warn',
+        message: res.slackNotified
+          ? '등록 완료 — Slack 알림 전송됨'
+          : '등록 완료 — Slack 알림 실패 (서버 로그 확인)',
+      });
+      await reloadList();
+      setView('list');
     } catch (e: any) {
       setToast({ kind: 'error', message: e?.message || '등록 실패' });
       throw e;
@@ -41,13 +57,12 @@ export function NewClientPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h2 className="text-lg font-bold">📋 신규 수임처 등록</h2>
-        <p className="text-sm text-muted mt-1">
-          양식 입력 후 등록 시 로컬에 저장되고 Slack 채널로 알림이 전송됩니다.
-        </p>
-      </div>
+    <div className="max-w-6xl mx-auto p-6 space-y-4">
+      <Header
+        view={view}
+        onBack={() => { setView('list'); setSelectedId(null); }}
+        onRegister={() => { setView('register'); setToast(null); }}
+      />
 
       {toast && (
         <div
@@ -64,9 +79,154 @@ export function NewClientPage() {
         </div>
       )}
 
-      <div className="bg-surface border border-border rounded-xl p-5">
-        <NewClientForm submitting={submitting} onSubmit={handleSubmit} />
+      {view === 'list' && (
+        <>
+          {listError && <div className="text-danger text-sm">{listError}</div>}
+          {listLoading ? (
+            <div className="text-muted">로딩 중...</div>
+          ) : (
+            <ClientListTable
+              items={list}
+              onSelect={(id) => { setSelectedId(id); setView('detail'); }}
+            />
+          )}
+        </>
+      )}
+
+      {view === 'register' && (
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <h2 className="text-lg font-bold mb-4">신규 수임처 등록</h2>
+          <NewClientForm submitting={submitting} onSubmit={handleRegister} />
+        </div>
+      )}
+
+      {view === 'detail' && selectedId && (
+        <DetailView
+          clientId={selectedId}
+          onToast={(t) => setToast(t)}
+          onListReloadNeeded={reloadList}
+        />
+      )}
+    </div>
+  );
+}
+
+function Header({
+  view,
+  onBack,
+  onRegister,
+}: {
+  view: View;
+  onBack: () => void;
+  onRegister: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {view !== 'list' && (
+          <button onClick={onBack} className="text-sm text-muted hover:text-text">
+            ← 목록
+          </button>
+        )}
+        <h1 className="text-xl font-bold">📋 신규 수임처</h1>
       </div>
+      {view === 'list' && (
+        <button
+          onClick={onRegister}
+          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
+        >
+          + 신규 등록
+        </button>
+      )}
+    </div>
+  );
+}
+
+function DetailView({
+  clientId,
+  onToast,
+  onListReloadNeeded,
+}: {
+  clientId: string;
+  onToast: (t: Toast) => void;
+  onListReloadNeeded: () => Promise<void>;
+}) {
+  const { record, loading, error, setRecord, reload } = useClientDetail(clientId);
+  const { update, pending } = useChecklistUpdate(clientId);
+
+  if (loading && !record) return <div className="text-muted">로딩 중...</div>;
+  if (error) return <div className="text-danger text-sm">{error}</div>;
+  if (!record) return <div className="text-muted">거래처를 찾을 수 없습니다.</div>;
+
+  async function handleUpdate(itemKey: ChecklistItemKey, payload: ChecklistUpdateInput) {
+    try {
+      const res = await update(itemKey, payload);
+      setRecord((prev) =>
+        prev ? { ...prev, checklist: { ...prev.checklist, [itemKey]: res.state } } : prev,
+      );
+      onListReloadNeeded();
+    } catch (e: any) {
+      onToast({ kind: 'error', message: `저장 실패: ${e.message ?? 'unknown'}` });
+      reload();
+    }
+  }
+
+  const progressDone = CHECKLIST_ITEMS.reduce(
+    (n, def) => (isItemDone(def, record.checklist[def.key]) ? n + 1 : n),
+    0,
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline gap-4">
+        <h2 className="text-lg font-bold">{record.companyName}</h2>
+        <span className="text-sm text-muted">대표자 {record.representative}</span>
+        <div className="ml-auto">
+          <ProgressPill done={progressDone} total={CHECKLIST_ITEMS.length} />
+        </div>
+      </div>
+
+      <InfoCard record={record} />
+
+      <div>
+        <h3 className="text-sm font-medium mb-2 text-muted">체크리스트</h3>
+        <ChecklistTable
+          checklist={record.checklist}
+          pendingKey={pending}
+          onUpdate={handleUpdate}
+        />
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ record }: { record: NewClientRecord }) {
+  const fields: Array<[string, string]> = [
+    ['업무 범위', record.businessScope],
+    ['업종', record.industry],
+    ['업무착수일', record.startDate],
+    ['기장료', `${record.bookkeepingFee.toLocaleString('en-US')}원`],
+    ['조정료', `${record.adjustmentFee.toLocaleString('en-US')}원`],
+    ['유입경로', record.inflowRoute],
+    ['이관여부', record.transferStatus],
+    ['사업자 생성여부', record.bizRegStatus],
+  ];
+  return (
+    <div className="border border-border rounded p-4 space-y-2 text-sm">
+      <div className="grid grid-cols-4 gap-3">
+        {fields.map(([k, v]) => (
+          <div key={k}>
+            <div className="text-xs text-muted">{k}</div>
+            <div>{v}</div>
+          </div>
+        ))}
+      </div>
+      {record.contractNote && (
+        <div>
+          <div className="text-xs text-muted">계약특이사항</div>
+          <div className="whitespace-pre-wrap">{record.contractNote}</div>
+        </div>
+      )}
     </div>
   );
 }
