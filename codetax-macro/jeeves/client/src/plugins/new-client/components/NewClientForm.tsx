@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { INDUSTRIES, type Industry } from '../types';
 
 export type BusinessScope = '기장' | '신고대리';
 export type InflowRoute = '소개1' | '소개2' | '블로그';
@@ -10,13 +11,15 @@ export interface NewClientFormValues {
   businessScope: BusinessScope;
   representative: string;
   startDate: string;
-  industry: string;
+  industry: Industry;
   bookkeepingFee: number;
   adjustmentFee: number;
   inflowRoute: InflowRoute;
   transferStatus: TransferStatus;
   bizRegStatus: BizRegStatus;
   contractNote: string;
+  transferSourceOffice: string;
+  transferReason: string;
 }
 
 const EMPTY: NewClientFormValues = {
@@ -24,13 +27,15 @@ const EMPTY: NewClientFormValues = {
   businessScope: '기장',
   representative: '',
   startDate: '',
-  industry: '',
+  industry: '제조업',
   bookkeepingFee: 0,
   adjustmentFee: 0,
   inflowRoute: '소개1',
   transferStatus: '신규',
   bizRegStatus: '기존',
   contractNote: '',
+  transferSourceOffice: '',
+  transferReason: '',
 };
 
 interface Props {
@@ -50,7 +55,7 @@ export function NewClientForm({ submitting, onSubmit }: Props) {
     if (!values.representative.trim()) return '대표자를 입력하세요';
     if (!values.startDate) return '업무착수일을 입력하세요';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(values.startDate)) return '업무착수일 형식이 올바르지 않습니다 (YYYY-MM-DD)';
-    if (!values.industry.trim()) return '업종을 입력하세요';
+    if (!values.industry) return '업종을 선택하세요';
     if (values.bookkeepingFee < 0) return '기장료는 0 이상이어야 합니다';
     if (values.adjustmentFee < 0) return '조정료는 0 이상이어야 합니다';
     return null;
@@ -122,13 +127,16 @@ export function NewClientForm({ submitting, onSubmit }: Props) {
 
       <div>
         <label className="block text-sm font-medium mb-1">업종 *</label>
-        <input
-          type="text"
+        <select
           className="w-full border border-border rounded px-3 py-2 bg-surface"
           value={values.industry}
-          onChange={(e) => set('industry', e.target.value)}
+          onChange={(e) => set('industry', e.target.value as Industry)}
           disabled={submitting}
-        />
+        >
+          {INDUSTRIES.map((ind) => (
+            <option key={ind} value={ind}>{ind}</option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -196,6 +204,33 @@ export function NewClientForm({ submitting, onSubmit }: Props) {
           </select>
         </div>
       </div>
+
+      {values.transferStatus === '이관' && (
+        <div className="space-y-4 border-l-2 border-accent pl-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">이관사무실</label>
+            <input
+              type="text"
+              className="w-full border border-border rounded px-3 py-2 bg-surface"
+              value={values.transferSourceOffice}
+              onChange={(e) => set('transferSourceOffice', e.target.value)}
+              disabled={submitting}
+              placeholder="예: 코드세무회계"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">이관사유</label>
+            <textarea
+              className="w-full border border-border rounded px-3 py-2 bg-surface"
+              rows={2}
+              value={values.transferReason}
+              onChange={(e) => set('transferReason', e.target.value)}
+              disabled={submitting}
+              placeholder="예: 가격 인하, 위치 편의성"
+            />
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium mb-1">계약특이사항</label>
