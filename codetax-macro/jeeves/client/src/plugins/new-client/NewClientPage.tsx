@@ -211,6 +211,12 @@ function InfoCard({ record }: { record: NewClientRecord }) {
     ['이관여부', record.transferStatus],
     ['사업자 생성여부', record.bizRegStatus],
   ];
+  if (record.transferSourceOffice) {
+    fields.push(['이관사무실', record.transferSourceOffice]);
+  }
+  if (record.transferReason) {
+    fields.push(['이관사유', record.transferReason]);
+  }
   return (
     <div className="border border-border rounded p-4 space-y-2 text-sm">
       <div className="grid grid-cols-4 gap-3">
