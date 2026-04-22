@@ -42,11 +42,6 @@ export async function append(
   if (input.bizRegStatus === '기존') {
     checklist.businessLicense = { status: '기존발급', updatedAt: now };
   }
-  // transferStatus='신규' 이면 이관자료 요청이 해당없음 → '신규' 상태로 선반영.
-  // doneStates 에 '신규' 포함되어 있어 자동 완료 처리.
-  if (input.transferStatus === '신규') {
-    checklist.transferData = { status: '신규', updatedAt: now };
-  }
   const record: NewClientRecord = {
     ...input,
     id: randomUUID(),

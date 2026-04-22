@@ -83,9 +83,23 @@ export async function syncToAirtable(
 // ============================================================================
 
 interface ReverseMapping {
-  airtableField: string;
-  /** jeeves ChecklistItemState → Airtable 셀 값 */
-  transform: (state: ChecklistItemState) => unknown;
+  /**
+   * 체크리스트 항목 상태를 Airtable 필드 집합으로 변환한다.
+   * 한 항목이 여러 Airtable 필드에 영향을 줄 수 있어 dict 반환.
+   * 비어있는 dict 를 반환하면 no-op.
+   */
+  toFields: (state: ChecklistItemState) => Record<string, unknown>;
+}
+
+function selectOrNull(status: string | undefined): string | null {
+  if (!status || status === 'none') return null;
+  return status;
+}
+
+function textOrNull(note: string | undefined): string | null {
+  if (note === undefined) return null; // '미제공' — 이 경우는 caller 가 skip
+  if (note.trim() === '') return null;
+  return note;
 }
 
 /**
@@ -94,14 +108,23 @@ interface ReverseMapping {
  */
 const REVERSE_MAPPINGS: Partial<Record<ChecklistItemKey, ReverseMapping>> = {
   katalkRoom: {
-    airtableField: '카톡방',
-    transform: (s) => s.status === 'done',
+    toFields: (s) => ({ '카톡방': s.status === 'done' }),
   },
   businessLicense: {
-    airtableField: '사업자등록증',
-    // jeeves 상태 중 'none' 은 Airtable 에서는 빈값(null) 로 처리.
-    // 그 외(기존발급/자료요청/접수완료/발급완료) 는 그대로 전달.
-    transform: (s) => (!s.status || s.status === 'none' ? null : s.status),
+    toFields: (s) => ({ '사업자등록증': selectOrNull(s.status) }),
+  },
+  transferData: {
+    toFields: (s) => {
+      const fields: Record<string, unknown> = {
+        '업체자료': selectOrNull(s.status),
+      };
+      // 메모 → 이관사무실. 메모가 아예 제공되지 않은 업데이트(상태만 바뀜) 에서는
+      // 기존 이관사무실 값을 건드리지 않기 위해 생략.
+      if (s.note !== undefined) {
+        fields['이관사무실'] = textOrNull(s.note);
+      }
+      return fields;
+    },
   },
 };
 
@@ -124,15 +147,18 @@ export async function updateAirtableChecklist(
     return false;
   }
 
+  const fields = mapping.toFields(state);
+  if (Object.keys(fields).length === 0) return true;
+
   try {
-    const value = mapping.transform(state);
-    const fields = { [mapping.airtableField]: value } as FieldSet;
     const base = new Airtable({ apiKey: cfg.airtableNewClientPat }).base(cfg.airtableNewClientBaseId);
-    await base(cfg.airtableNewClientTableName).update([{ id: airtableRecordId, fields }]);
+    await base(cfg.airtableNewClientTableName).update([
+      { id: airtableRecordId, fields: fields as FieldSet },
+    ]);
     return true;
   } catch (err: any) {
     logError(
-      `[new-client] airtable reverse sync failed (${itemKey} → ${mapping.airtableField}): ${err.message || err}`,
+      `[new-client] airtable reverse sync failed (${itemKey} → ${Object.keys(fields).join(',')}): ${err.message || err}`,
     );
     return false;
   }
