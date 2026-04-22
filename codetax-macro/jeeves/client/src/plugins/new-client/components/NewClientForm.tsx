@@ -2,6 +2,8 @@ import { useState } from 'react';
 
 export type BusinessScope = '기장' | '신고대리';
 export type InflowRoute = '소개1' | '소개2' | '블로그';
+export type TransferStatus = '이관' | '신규';
+export type BizRegStatus = '기존' | '신규생성';
 
 export interface NewClientFormValues {
   companyName: string;
@@ -12,6 +14,8 @@ export interface NewClientFormValues {
   bookkeepingFee: number;
   adjustmentFee: number;
   inflowRoute: InflowRoute;
+  transferStatus: TransferStatus;
+  bizRegStatus: BizRegStatus;
   contractNote: string;
 }
 
@@ -24,6 +28,8 @@ const EMPTY: NewClientFormValues = {
   bookkeepingFee: 0,
   adjustmentFee: 0,
   inflowRoute: '소개1',
+  transferStatus: '신규',
+  bizRegStatus: '기존',
   contractNote: '',
 };
 
@@ -162,6 +168,33 @@ export function NewClientForm({ submitting, onSubmit }: Props) {
           <option value="소개2">소개2</option>
           <option value="블로그">블로그</option>
         </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">이관여부 *</label>
+          <select
+            className="w-full border border-border rounded px-3 py-2 bg-surface"
+            value={values.transferStatus}
+            onChange={(e) => set('transferStatus', e.target.value as TransferStatus)}
+            disabled={submitting}
+          >
+            <option value="신규">신규</option>
+            <option value="이관">이관</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">사업자 생성여부 *</label>
+          <select
+            className="w-full border border-border rounded px-3 py-2 bg-surface"
+            value={values.bizRegStatus}
+            onChange={(e) => set('bizRegStatus', e.target.value as BizRegStatus)}
+            disabled={submitting}
+          >
+            <option value="기존">기존</option>
+            <option value="신규생성">신규생성</option>
+          </select>
+        </div>
       </div>
 
       <div>
