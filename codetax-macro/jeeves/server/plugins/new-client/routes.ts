@@ -190,4 +190,47 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       res.status(500).json({ error: 'failed to update checklist' });
     }
   });
+
+  app.post('/api/new-client/:id/dropbox-folder/retry', async (req, res) => {
+    const cfg = loadConfig();
+    const now = () => new Date().toISOString();
+    try {
+      const record = await readOne(cfg.dataFile, req.params.id);
+      if (!record) return res.status(404).json({ error: 'not found' });
+      if (record.dropboxFolderPath) {
+        return res.status(409).json({ error: 'dropbox folder already created', path: record.dropboxFolderPath });
+      }
+      if (!record.entityType) {
+        await mergeChecklist(cfg.dataFile, record.id, {
+          dropboxFolder: { status: 'error', note: '기존 레코드 — entityType 없음, 재등록 필요', updatedAt: now() },
+        });
+        return res.status(400).json({ error: 'record has no entityType (legacy record)' });
+      }
+      const creds = extractCreds(cfg);
+      if (!creds) {
+        await mergeChecklist(cfg.dataFile, record.id, {
+          dropboxFolder: { status: 'error', note: 'DROPBOX_* env 미설정', updatedAt: now() },
+        });
+        return res.status(500).json({ error: 'dropbox env missing' });
+      }
+      const out = await createClientFolders(
+        record.entityType,
+        record.businessScope,
+        record.companyName,
+        creds,
+      );
+      await setDropboxFolderPath(cfg.dataFile, record.id, out.path);
+      const newState = { status: 'done', updatedAt: now() };
+      await mergeChecklist(cfg.dataFile, record.id, { dropboxFolder: newState });
+      ctx.log(`[new-client] dropbox retry ok: id=${record.id} path=${out.path}`);
+      res.json({ ok: true, path: out.path, state: newState });
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      ctx.logError(`[new-client] dropbox retry failed: ${msg}`);
+      await mergeChecklist(cfg.dataFile, req.params.id, {
+        dropboxFolder: { status: 'error', note: msg.slice(0, 500), updatedAt: now() },
+      });
+      res.status(500).json({ error: msg });
+    }
+  });
 }
