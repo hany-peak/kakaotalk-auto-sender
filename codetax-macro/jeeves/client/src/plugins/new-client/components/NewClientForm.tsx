@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { INDUSTRIES, type Industry } from '../types';
+import { INDUSTRIES, ENTITY_TYPES, type Industry, type EntityType } from '../types';
 
 export type BusinessScope = '기장' | '신고대리';
 export type InflowRoute = '소개1' | '소개2' | '블로그';
@@ -9,6 +9,7 @@ export type BizRegStatus = '기존' | '신규생성';
 export interface NewClientFormValues {
   companyName: string;
   businessScope: BusinessScope;
+  entityType: EntityType;
   representative: string;
   startDate: string;
   industry: Industry;
@@ -25,6 +26,7 @@ export interface NewClientFormValues {
 const EMPTY: NewClientFormValues = {
   companyName: '',
   businessScope: '기장',
+  entityType: '개인',
   representative: '',
   startDate: '',
   industry: '제조업',
@@ -101,6 +103,25 @@ export function NewClientForm({ submitting, onSubmit }: Props) {
           <option value="기장">기장</option>
           <option value="신고대리">신고대리</option>
         </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">사업자 형태 *</label>
+        <div className="flex gap-4">
+          {ENTITY_TYPES.map((et) => (
+            <label key={et} className="inline-flex items-center gap-1">
+              <input
+                type="radio"
+                name="entityType"
+                value={et}
+                checked={values.entityType === et}
+                onChange={() => set('entityType', et)}
+                disabled={submitting}
+              />
+              <span className="text-sm">{et}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <div>
