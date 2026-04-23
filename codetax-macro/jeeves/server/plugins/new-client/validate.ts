@@ -1,5 +1,6 @@
 import {
   BUSINESS_SCOPES,
+  ENTITY_TYPES,
   INFLOW_ROUTES,
   TRANSFER_STATUSES,
   BIZ_REG_STATUSES,
@@ -50,6 +51,11 @@ export function validateInput(body: unknown): ValidationResult {
     return { ok: false, error: 'invalid businessScope' };
   }
 
+  const entityType = b.entityType;
+  if (typeof entityType !== 'string' || !ENTITY_TYPES.includes(entityType as any)) {
+    return { ok: false, error: 'invalid entityType' };
+  }
+
   const inflowRoute = b.inflowRoute;
   if (typeof inflowRoute !== 'string' || !INFLOW_ROUTES.includes(inflowRoute as any)) {
     return { ok: false, error: 'invalid inflowRoute' };
@@ -98,6 +104,7 @@ export function validateInput(body: unknown): ValidationResult {
     value: {
       companyName,
       businessScope: businessScope as NewClientInput['businessScope'],
+      entityType: entityType as NewClientInput['entityType'],
       representative,
       startDate,
       industry: industry as NewClientInput['industry'],
