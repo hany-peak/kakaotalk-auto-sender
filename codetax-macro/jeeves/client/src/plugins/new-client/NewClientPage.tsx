@@ -193,7 +193,14 @@ function DetailView({
         <ChecklistTable
           checklist={record.checklist}
           pendingKey={pending}
+          clientId={clientId}
           onUpdate={handleUpdate}
+          onDropboxStateUpdate={(next) => {
+            setRecord((prev) =>
+              prev ? { ...prev, checklist: { ...prev.checklist, dropboxFolder: next } } : prev,
+            );
+            onListReloadNeeded();
+          }}
         />
       </div>
     </div>

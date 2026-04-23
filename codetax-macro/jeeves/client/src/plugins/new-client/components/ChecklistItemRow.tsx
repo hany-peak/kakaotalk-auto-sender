@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isItemDone } from '../types';
 import { KATALK_TEMPLATES } from '../katalkTemplates';
+import { useDropboxRetry } from '../hooks/useChecklistUpdate';
 import type {
   ChecklistItemDefinition,
   ChecklistItemState,
@@ -11,7 +12,9 @@ interface Props {
   def: ChecklistItemDefinition;
   state: ChecklistItemState | undefined;
   pending: boolean;
+  clientId: string | null;
   onUpdate: (payload: ChecklistUpdateInput) => Promise<void>;
+  onDropboxUpdate?: (next: ChecklistItemState) => void;
 }
 
 function formatKst(iso: string | undefined): string {
@@ -21,12 +24,13 @@ function formatKst(iso: string | undefined): string {
   return `${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')} ${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-export function ChecklistItemRow({ def, state, pending, onUpdate }: Props) {
+export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDropboxUpdate }: Props) {
   const done = isItemDone(def, state);
   const [localValue, setLocalValue] = useState<string>(state?.value ?? '');
   const [localNote, setLocalNote] = useState<string>(state?.note ?? '');
   const [err, setErr] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const { retry: retryDropbox, pending: dropboxRetrying } = useDropboxRetry(clientId);
 
   useEffect(() => {
     setLocalValue(state?.value ?? '');
@@ -63,6 +67,16 @@ export function ChecklistItemRow({ def, state, pending, onUpdate }: Props) {
     catch (e: any) { setErr(e.message ?? 'failed'); }
   }
 
+  async function handleDropboxRetry() {
+    setErr(null);
+    try {
+      const res = await retryDropbox();
+      onDropboxUpdate?.({ status: res.state.status, updatedAt: res.state.updatedAt });
+    } catch (e: any) {
+      setErr(e.message ?? 'retry failed');
+    }
+  }
+
   return (
     <tr className={`border-b border-border ${done ? 'bg-surface2/40' : ''}`}>
       <td className="py-2 pr-3 text-xs text-muted whitespace-nowrap">
@@ -91,7 +105,9 @@ export function ChecklistItemRow({ def, state, pending, onUpdate }: Props) {
         )}
       </td>
       <td className="py-2 pr-3">
-        {renderEditor(def, state, localValue, setLocalValue, submitStatus, submitValue)}
+        {def.key === 'dropboxFolder'
+          ? renderDropboxCell(state, dropboxRetrying, handleDropboxRetry)
+          : renderEditor(def, state, localValue, setLocalValue, submitStatus, submitValue)}
         {err && <div className="text-danger text-xs mt-1">{err}</div>}
       </td>
       <td className="py-2 pr-3">
@@ -108,6 +124,33 @@ export function ChecklistItemRow({ def, state, pending, onUpdate }: Props) {
       </td>
     </tr>
   );
+}
+
+function renderDropboxCell(
+  state: ChecklistItemState | undefined,
+  retrying: boolean,
+  onRetry: () => void,
+) {
+  const status = state?.status ?? 'none';
+  if (status === 'done') {
+    return <span className="text-xs text-success">✓ 생성됨</span>;
+  }
+  if (status === 'error') {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-danger">❌ 실패</span>
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={retrying}
+          className="px-2 py-0.5 text-xs border border-border rounded hover:bg-surface2 disabled:opacity-50"
+        >
+          {retrying ? '재시도 중...' : '재시도'}
+        </button>
+      </div>
+    );
+  }
+  return <span className="text-xs text-muted">대기</span>;
 }
 
 function renderEditor(
