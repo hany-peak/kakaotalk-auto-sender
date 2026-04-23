@@ -133,21 +133,25 @@ async function pollLoggedIn(page: Page, timeoutMs: number): Promise<boolean> {
 }
 
 async function login(page: Page, creds: WehagoCreds, log: (m: string) => void): Promise<void> {
-  log(`[wehago] navigating to ${creds.loginUrl}`);
-  await page.goto(creds.loginUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  log(`[wehago] navigating to https://www.wehago.com/`);
+  await page.goto('https://www.wehago.com/', { waitUntil: 'domcontentloaded', timeout: 30_000 });
+  await page.waitForTimeout(1500);
 
-  if (await pollLoggedIn(page, 3_000)) {
+  if (await pollLoggedIn(page, 2_000)) {
     log('[wehago] already logged in (session reused)');
     return;
   }
 
-  log('[wehago] filling login form');
-  await page.getByPlaceholder('아이디', { exact: false }).first().fill(creds.username, { timeout: 10_000 });
-  await page.getByPlaceholder('비밀번호', { exact: false }).first().fill(creds.password);
-  await page.getByRole('button', { name: /로그인/ }).first().click();
+  // Landing page shows a "로그인" link (id=login) that opens the login form.
+  log('[wehago] opening login form');
+  await page.locator('#login').click();
+  await page.waitForSelector('#inputId', { timeout: 15_000 });
 
-  // SPA apps don't reliably trigger networkidle; poll for the logged-in
-  // indicator instead.
+  log('[wehago] filling credentials');
+  await page.locator('#inputId').fill(creds.username);
+  await page.locator('#inputPw').fill(creds.password);
+  await page.getByRole('button', { name: '로그인', exact: true }).click();
+
   if (!(await pollLoggedIn(page, 45_000))) {
     await page.screenshot({ path: '/tmp/wehago-login-fail.png' }).catch(() => {});
     throw new Error('로그인 실패 — ID/PW/CAPTCHA 확인 (/tmp/wehago-login-fail.png 스크린샷 저장)');
