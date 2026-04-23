@@ -269,8 +269,8 @@ async function dismissPopups(page: Page, log: (m: string) => void): Promise<void
 
 /**
  * WEHAGO custom dropdowns are not native <select> — they're clickable divs
- * that reveal an options list. currentText is the default value shown; target
- * is the value we want selected. No-op when already equal.
+ * with a text span inside. Multi-strategy: try clicking the text node, then
+ * its parent, then an actionable ancestor, then combobox role.
  */
 async function selectCustomDropdown(
   page: Page,
@@ -283,21 +283,51 @@ async function selectCustomDropdown(
     log(`[wehago] ${labelHint} already at "${targetText}"`);
     return;
   }
-  // Click the trigger showing current value. In WEHAGO the trigger appears
-  // once; after opening, the same text may show in the options list too.
-  const trigger = page.getByText(currentText, { exact: true }).first();
-  await trigger.click({ timeout: 5_000 }).catch((e: Error) => {
-    throw new Error(`${labelHint} 드롭다운 trigger 클릭 실패 (${currentText}): ${e.message}`);
-  });
+
+  // --- Open the dropdown (try multiple strategies) ---
+  const textLoc = page.getByText(currentText, { exact: true }).first();
+  const triggerStrategies: Array<[string, () => Promise<void>]> = [
+    ['text', () => textLoc.click({ timeout: 1500 })],
+    ['parent', () => textLoc.locator('xpath=..').click({ timeout: 1500 })],
+    ['grandparent', () => textLoc.locator('xpath=../..').click({ timeout: 1500 })],
+    ['role-ancestor', () => textLoc.locator('xpath=ancestor::*[self::button or @role="button" or @role="combobox"][1]').click({ timeout: 1500 })],
+    ['combobox-filter', () => page.getByRole('combobox').filter({ hasText: currentText }).first().click({ timeout: 1500 })],
+  ];
+  let opened = false;
+  for (const [name, strat] of triggerStrategies) {
+    try {
+      await strat();
+      opened = true;
+      log(`[wehago] ${labelHint} trigger opened via ${name}`);
+      break;
+    } catch {
+      /* next strategy */
+    }
+  }
+  if (!opened) {
+    await page.screenshot({ path: `/tmp/wehago-${labelHint}-trigger-fail.png` }).catch(() => {});
+    throw new Error(`${labelHint} 드롭다운 trigger 열기 실패 (${currentText}) — screenshot /tmp/wehago-${labelHint}-trigger-fail.png`);
+  }
   await page.waitForTimeout(500);
-  // Click the target option. If target text didn't exist before opening,
-  // .first() reliably hits the newly-visible option.
-  const option = page.getByText(targetText, { exact: true }).first();
-  await option.click({ timeout: 5_000 }).catch((e: Error) => {
-    throw new Error(`${labelHint} option 클릭 실패 (${targetText}): ${e.message}`);
-  });
-  await page.waitForTimeout(300);
-  log(`[wehago] ${labelHint}: ${currentText} → ${targetText}`);
+
+  // --- Click the target option ---
+  const optionStrategies: Array<[string, () => Promise<void>]> = [
+    ['role-option', () => page.getByRole('option', { name: targetText }).first().click({ timeout: 2000 })],
+    ['text', () => page.getByText(targetText, { exact: true }).first().click({ timeout: 2000 })],
+    ['li', () => page.locator(`li:has-text("${targetText}")`).first().click({ timeout: 2000 })],
+  ];
+  for (const [name, strat] of optionStrategies) {
+    try {
+      await strat();
+      await page.waitForTimeout(300);
+      log(`[wehago] ${labelHint}: ${currentText} → ${targetText} (opt via ${name})`);
+      return;
+    } catch {
+      /* next strategy */
+    }
+  }
+  await page.screenshot({ path: `/tmp/wehago-${labelHint}-option-fail.png` }).catch(() => {});
+  throw new Error(`${labelHint} 옵션 선택 실패 (${targetText}) — screenshot saved`);
 }
 
 export interface RegisterResult {
