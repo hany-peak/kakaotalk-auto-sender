@@ -187,17 +187,20 @@ const POPUP_CLOSE_SELECTORS = [
   '[class*="commonDlg"] [class*="btn_x"]',
 ];
 
-// Fallback: hide WEHAGO commonDlg overlays via JS when clicks can't find them.
+// WEHAGO commonDlg* overlays (프로모션, 공지, etc.) intercept pointer events
+// on underlying UI. If we can't close them via buttons, hide them AND disable
+// their click-capture so the form/modal below is clickable.
+// NOTE: the 수임처 생성 방식 modal + 수임처 신규생성 modal may also use these
+// classes. Use this ONLY before navigation clicks, not during form fill.
 async function forceHideCommonDialogs(page: Page, log: (m: string) => void): Promise<void> {
   const hidden = await page.evaluate(() => {
     const selectors = '[class*="commonDlg"], [class*="dialog_data_area"]';
     let count = 0;
     document.querySelectorAll(selectors).forEach((el) => {
-      const r = (el as HTMLElement).getBoundingClientRect();
-      if (r.width > 100 && r.height > 100) {
-        (el as HTMLElement).style.display = 'none';
-        count++;
-      }
+      const style = (el as HTMLElement).style;
+      style.display = 'none';
+      style.pointerEvents = 'none';
+      count++;
     });
     return count;
   }).catch(() => 0);
@@ -324,10 +327,15 @@ export async function registerWehagoClient(
   await dismissPopups(page, log);
 
   log('[wehago] clicking 새 수임처');
-  await page.getByRole('button', { name: /새 수임처/ }).first().click();
+  // force: true — WEHAGO 의 commonDlg209 래퍼가 actionability 검사에서
+  // intercept 로 잡혀 기본 click 이 timeout 됨. 실제 브라우저 이벤트는 정상
+  // 전파되므로 force 로 검사 건너뛰는 게 가장 안정적.
+  await page.getByRole('button', { name: /새 수임처/ }).first().click({ force: true });
+  await page.waitForTimeout(800);
 
   log('[wehago] selecting 신규 회사로 생성');
-  await page.getByText('신규 회사로 생성').first().click();
+  await page.getByText('신규 회사로 생성').first().click({ force: true });
+  await page.waitForTimeout(800);
 
   // Wait for the 수임처 신규생성 modal heading so subsequent fills see a
   // fully-rendered form (and popup animations are done).
