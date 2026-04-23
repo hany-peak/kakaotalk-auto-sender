@@ -352,9 +352,17 @@ export async function registerWehagoClient(
       return;
     }
     try {
-      const input = page.locator(`input[placeholder*="${placeholderHint}"]`).first();
+      const locator = page.locator(`input[placeholder*="${placeholderHint}"]`);
+      const count = await locator.count();
+      if (count === 0) {
+        log(`[wehago]   ✗ ${label}: no input matching placeholder~"${placeholderHint}"`);
+        return;
+      }
+      const input = locator.first();
+      // Click to focus first (bypasses some overlay intercept issues), then fill.
+      await input.click({ force: true, timeout: 2_000 }).catch(() => {});
       await input.fill(value, { timeout: 3_000 });
-      log(`[wehago]   ✓ ${label} = ${value}`);
+      log(`[wehago]   ✓ ${label} = ${value} (match=${count})`);
     } catch (e: any) {
       log(`[wehago]   ✗ ${label} 실패: ${e.message}`);
     }
@@ -401,26 +409,10 @@ export async function registerWehagoClient(
     }
   }
 
-  log('[wehago] submitting');
-  await page.getByRole('button', { name: '수임처 생성' }).click();
-
-  // Wait for the modal to disappear as a success signal (poll up to 30s).
-  const modal = page.getByText('수임처 신규생성').first();
-  const start = Date.now();
-  let closed = false;
-  while (Date.now() - start < 30_000) {
-    if ((await modal.count()) === 0) {
-      closed = true;
-      break;
-    }
-    await page.waitForTimeout(1000);
-  }
-  if (!closed) {
-    await page.screenshot({ path: '/tmp/wehago-submit-fail.png' }).catch(() => {});
-    throw new Error('수임처 생성 후 모달이 닫히지 않음 — 입력값/검증 확인 (/tmp/wehago-submit-fail.png)');
-  }
-  log(`[wehago] registration submitted for ${form.companyName}`);
-
+  // Auto-submit is disabled for safety — the user should review the populated
+  // form and click [수임처 생성] themselves. Once automation stabilizes we can
+  // re-enable this.
+  log('[wehago] form populated — user should review and click [수임처 생성]');
   return { ok: true, companyName: form.companyName };
 }
 
