@@ -224,6 +224,9 @@ function InfoCard({ record }: { record: NewClientRecord }) {
   if (record.transferReason) {
     fields.push(['이관사유', record.transferReason]);
   }
+  if (record.dropboxFolderPath) {
+    fields.push(['Dropbox', record.dropboxFolderPath]);
+  }
   return (
     <div className="border border-border rounded p-4 space-y-2 text-sm">
       <div className="grid grid-cols-4 gap-3">
