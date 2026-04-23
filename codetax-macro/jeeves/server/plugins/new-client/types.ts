@@ -22,6 +22,9 @@ export type TransferStatus = typeof TRANSFER_STATUSES[number];
 export const BIZ_REG_STATUSES = ['기존', '신규생성'] as const;
 export type BizRegStatus = typeof BIZ_REG_STATUSES[number];
 
+export const ENTITY_TYPES = ['개인', '법인'] as const;
+export type EntityType = typeof ENTITY_TYPES[number];
+
 export const INDUSTRIES = [
   '건설업',
   '제조업',
@@ -36,6 +39,7 @@ export type Industry = typeof INDUSTRIES[number];
 export interface NewClientInput {
   companyName: string;
   businessScope: BusinessScope;
+  entityType: EntityType;
   representative: string;
   startDate: string; // YYYY-MM-DD
   industry: Industry;
@@ -49,11 +53,13 @@ export interface NewClientInput {
   transferReason?: string;
 }
 
-export interface NewClientRecord extends NewClientInput {
+export interface NewClientRecord extends Omit<NewClientInput, 'entityType'> {
   id: string;
   createdAt: string; // ISO 8601
   checklist: ChecklistState;
   airtableRecordId?: string; // 등록 시 Airtable 에 생성된 레코드 ID. 없으면 역동기화 불가.
+  entityType?: EntityType;       // 신규 레코드엔 존재, 기존 레코드엔 undefined
+  dropboxFolderPath?: string;    // 생성 성공 시 전체 경로 저장
 }
 
 export interface SubmitResponse {
@@ -61,6 +67,8 @@ export interface SubmitResponse {
   id: string;
   slackNotified: boolean;
   airtableSynced: boolean;
+  dropboxFolderCreated: boolean;
+  dropboxFolderPath?: string;
 }
 
 export interface ErrorResponse {
