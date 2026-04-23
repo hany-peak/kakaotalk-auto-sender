@@ -187,27 +187,40 @@ export interface FolderStatusResult {
 
 /**
  * Checks whether the given client folder exists on Dropbox, and if so returns
- * the file names inside its "1. 기초자료" subfolder. If the folder or its
- * subfolder is missing (path/not_found), returns exists:false with empty files.
+ * the file names inside its 기초자료 subfolder. Legacy folders use both
+ * "1. 기초자료" (with space) and "1.기초자료" (no space) — this function lists
+ * the client folder and picks whichever exists. If the folder itself or any
+ * 기초자료 variant is missing, returns exists:false with empty files.
  */
 export async function getFolderStatus(
   clientPath: string,
   creds: DropboxCreds,
 ): Promise<FolderStatusResult> {
+  let clientEntries: FolderEntry[];
   try {
-    const entries = await listFolder(`${clientPath}/1. 기초자료`, creds);
-    return {
-      exists: true,
-      baseFiles: entries
-        .filter((e) => e['.tag'] === 'file')
-        .map((e) => e.name),
-    };
+    clientEntries = await listFolder(clientPath, creds);
   } catch (err: any) {
     const msg = err?.message ?? '';
     if (msg.includes('path/not_found') || msg.includes('"not_found"')) {
       return { exists: false, baseFiles: [] };
     }
     throw err;
+  }
+  // Accept either "1. 기초자료" or "1.기초자료" (legacy).
+  const baseFolder = clientEntries.find(
+    (e) => e['.tag'] === 'folder' && /^1\.\s*기초자료\s*$/.test(e.name),
+  );
+  if (!baseFolder) {
+    return { exists: true, baseFiles: [] };
+  }
+  try {
+    const baseEntries = await listFolder(`${clientPath}/${baseFolder.name}`, creds);
+    return {
+      exists: true,
+      baseFiles: baseEntries.filter((e) => e['.tag'] === 'file').map((e) => e.name),
+    };
+  } catch {
+    return { exists: true, baseFiles: [] };
   }
 }
 
