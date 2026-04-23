@@ -345,28 +345,34 @@ export async function registerWehagoClient(
   log(`[wehago] filling form — companyName=${form.companyName}, entityType=${form.entityType}, scope=${form.scope}`);
   log(`[wehago]   representative=${form.representative}, bizRegNumber=${form.bizRegNumber}, industry=${form.industry ?? '-'}`);
 
-  // Helper — fill by placeholder substring, best-effort (log and continue on fail).
-  // WEHAGO pre-renders hidden template inputs with the same placeholder as the
-  // visible form, so `.first()` often lands on the hidden one. We filter to
-  // :visible to hit the actual form input.
+  // Helper — fill by placeholder substring. WEHAGO renders both a sidebar/list
+  // row template AND the 수임처 신규생성 modal input with the same placeholder;
+  // :visible can catch both. The modal is appended later in DOM, so .last()
+  // reliably targets the modal form. Additionally scope to the modal container
+  // when possible for extra safety.
+  const modal = page.locator('text=수임처 신규생성').locator('xpath=ancestor::*[contains(@class, "Dlg") or contains(@class, "dialog") or contains(@class, "popup") or contains(@class, "modal")][1]');
+  const modalExists = (await modal.count()) > 0;
+
   const fillByPlaceholder = async (placeholderHint: string, value: string, label: string): Promise<void> => {
     if (!value) {
       log(`[wehago]   skip ${label} — empty value`);
       return;
     }
     try {
-      const locator = page.locator(`input[placeholder*="${placeholderHint}"]:visible`);
+      // Prefer scoping to modal; fall back to page-level .last() if we can't
+      // resolve the modal ancestor.
+      const scope = modalExists ? modal : page;
+      const locator = scope.locator(`input[placeholder*="${placeholderHint}"]:visible`);
       const count = await locator.count();
       if (count === 0) {
-        // Fallback: some inputs may not be caught by :visible (e.g. offscreen).
         const anyCount = await page.locator(`input[placeholder*="${placeholderHint}"]`).count();
-        log(`[wehago]   ✗ ${label}: no VISIBLE input matching "${placeholderHint}" (total in DOM: ${anyCount})`);
+        log(`[wehago]   ✗ ${label}: no visible input in modal matching "${placeholderHint}" (DOM total: ${anyCount})`);
         return;
       }
-      const input = locator.first();
+      const input = locator.last(); // modal input is latest-rendered
       await input.click({ force: true, timeout: 2_000 }).catch(() => {});
       await input.fill(value, { timeout: 3_000 });
-      log(`[wehago]   ✓ ${label} = ${value} (visible match=${count})`);
+      log(`[wehago]   ✓ ${label} = ${value} (match=${count}, scope=${modalExists ? 'modal' : 'page'})`);
     } catch (e: any) {
       log(`[wehago]   ✗ ${label} 실패: ${e.message}`);
     }
