@@ -35,3 +35,23 @@ export function useChecklistUpdate(clientId: string | null) {
 
   return { update, pending, error };
 }
+
+export function useDropboxRetry(clientId: string | null) {
+  const api = useApi();
+  const [pending, setPending] = useState(false);
+
+  const retry = useCallback(async () => {
+    if (!clientId) throw new Error('no client');
+    setPending(true);
+    try {
+      return await api.post<{ ok: true; path: string; state: { status: string; updatedAt: string } }>(
+        `/new-client/${clientId}/dropbox-folder/retry`,
+        {},
+      );
+    } finally {
+      setPending(false);
+    }
+  }, [api, clientId]);
+
+  return { retry, pending };
+}
