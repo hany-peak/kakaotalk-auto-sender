@@ -371,7 +371,11 @@ export async function registerWehagoClient(
       }
       const input = locator.last(); // modal input is latest-rendered
       await input.click({ force: true, timeout: 2_000 }).catch(() => {});
-      await input.fill(value, { timeout: 3_000 });
+      // pressSequentially emits keydown/keypress/input per character → React
+      // controlled-inputs and masked inputs (예: 사업자등록번호 XXX-XX-XXXXX)
+      // reliably register. fill() alone is often silently overwritten.
+      await input.clear({ timeout: 2_000 }).catch(() => {});
+      await input.pressSequentially(value, { delay: 15 });
       log(`[wehago]   ✓ ${label} = ${value} (match=${count}, scope=${modalExists ? 'modal' : 'page'})`);
     } catch (e: any) {
       log(`[wehago]   ✗ ${label} 실패: ${e.message}`);
