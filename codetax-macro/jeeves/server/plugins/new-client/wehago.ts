@@ -159,6 +159,41 @@ async function login(page: Page, creds: WehagoCreds, log: (m: string) => void): 
   log('[wehago] login successful');
 }
 
+/**
+ * Dismiss any promotional / notice / popup modals that appear after login.
+ * Non-fatal: scans multiple common close-button patterns and clicks visible ones.
+ */
+async function dismissPopups(page: Page, log: (m: string) => void): Promise<void> {
+  const closeSelectors = [
+    'button:has-text("오늘 하루 보지 않기")',
+    'button:has-text("오늘하루 보지 않기")',
+    'button:has-text("다시 보지 않기")',
+    'button:has-text("닫기")',
+    '[aria-label="닫기"]',
+    '[aria-label="close"]',
+    '.popup-close',
+    '.btn-close',
+    '.closeBtn',
+    '[class*="btn_close"]',
+  ];
+  let dismissed = 0;
+  for (const sel of closeSelectors) {
+    try {
+      const els = await page.locator(sel).all();
+      for (const el of els) {
+        if (await el.isVisible().catch(() => false)) {
+          await el.click({ timeout: 2000 }).catch(() => {});
+          dismissed++;
+          await page.waitForTimeout(300);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  if (dismissed > 0) log(`[wehago] dismissed ${dismissed} popup(s)`);
+}
+
 export interface RegisterResult {
   ok: true;
   companyName: string;
@@ -181,6 +216,16 @@ export async function registerWehagoClient(
 
   const page = await ensureBrowser();
   await login(page, creds, log);
+
+  // Promotional / notice modals often appear right after login — close them first.
+  await dismissPopups(page, log);
+
+  // Click the 전체 tab — the 담당 수임처 view + "새 수임처" button only surface
+  // under this tab (not T edge 사용/미사용/개인고객/대시보드).
+  log('[wehago] clicking 전체 tab');
+  await page.getByText('전체', { exact: true }).first().click({ timeout: 10_000 });
+  await page.waitForTimeout(1000);
+  await dismissPopups(page, log);
 
   log('[wehago] clicking 새 수임처');
   await page.getByRole('button', { name: /새 수임처/ }).first().click();
