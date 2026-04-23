@@ -162,6 +162,8 @@ async function login(page: Page, creds: WehagoCreds, log: (m: string) => void): 
 const POPUP_CLOSE_SELECTORS = [
   'button:has-text("오늘 하루 보지 않기")',
   'button:has-text("오늘하루 보지 않기")',
+  'button:has-text("하루 동안 보지 않기")',
+  'button:has-text("하루동안 보지 않기")',
   'button:has-text("다시 보지 않기")',
   'button:has-text("닫기")',
   '[aria-label="닫기"]',
