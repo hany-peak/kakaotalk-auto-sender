@@ -353,6 +353,25 @@ export async function registerWehagoClient(
   const modal = page.locator('text=수임처 신규생성').locator('xpath=ancestor::*[contains(@class, "Dlg") or contains(@class, "dialog") or contains(@class, "popup") or contains(@class, "modal")][1]');
   const modalExists = (await modal.count()) > 0;
 
+  // Fill input that lives inside the row of a label cell (e.g. 개업년월일,
+  // 인사연도 — no placeholder, but clear label text nearby).
+  const fillByLabel = async (labelText: string, value: string, logLabel: string): Promise<void> => {
+    if (!value) {
+      log(`[wehago]   skip ${logLabel} — empty value`);
+      return;
+    }
+    try {
+      const scope = modalExists ? modal : page;
+      const input = scope.locator(`text=${labelText}`).locator('..').locator('input:visible').first();
+      await input.click({ force: true, timeout: 2_000 }).catch(() => {});
+      await input.clear({ timeout: 2_000 }).catch(() => {});
+      await input.pressSequentially(value, { delay: 20 });
+      log(`[wehago]   ✓ ${logLabel} = ${value}`);
+    } catch (e: any) {
+      log(`[wehago]   ✗ ${logLabel} 실패: ${e.message}`);
+    }
+  };
+
   const fillByPlaceholder = async (placeholderHint: string, value: string, label: string): Promise<void> => {
     if (!value) {
       log(`[wehago]   skip ${label} — empty value`);
@@ -409,16 +428,41 @@ export async function registerWehagoClient(
     log(`[wehago]   ✗ 서비스 제공형태 실패: ${e.message}`);
   }
 
-  // 개업년월일 — label-proximity, best effort.
-  if (form.openDate) {
-    const openDateFormatted = form.openDate.replace(/-/g, '.');
+  // 회계/급여관리 정보 섹션 — 개업년월일이 있으면 그 해 기준으로 기수 회계기간
+  // (YYYY.01.01 ~ YYYY.12.31) + 인사연도(YYYY)를 자동 입력.
+  if (!form.openDate) {
+    log(`[wehago]   skip 개업년월일/기수/인사연도 — Airtable 개업일 없음 (수동 입력 필요)`);
+  } else {
+    const digitsOnly = form.openDate.replace(/\D/g, '').slice(0, 8); // YYYYMMDD
+    const openYear = digitsOnly.slice(0, 4);
+
+    // 1) 개업년월일
+    await fillByLabel('개업년월일', digitsOnly, '개업년월일');
+
+    // 2) 기수 회계기간 시작일 / 종료일 — label 행에 input 이 3개 (시작/종료/기수).
+    //    첫 두 개 input 을 YYYY.01.01 / YYYY.12.31 로 덮어씀.
     try {
-      const openDateInput = page.locator('text=개업년월일').locator('..').locator('input').first();
-      await openDateInput.fill(openDateFormatted, { timeout: 3_000 });
-      log(`[wehago]   ✓ 개업년월일 = ${openDateFormatted}`);
+      const scope = modalExists ? modal : page;
+      const fiscalInputs = scope.locator('text=기수 회계기간').locator('..').locator('input:visible');
+      const fiscalCount = await fiscalInputs.count();
+      if (fiscalCount >= 2) {
+        const starts = [`${openYear}0101`, `${openYear}1231`];
+        for (let i = 0; i < 2; i++) {
+          const inp = fiscalInputs.nth(i);
+          await inp.click({ force: true, timeout: 2_000 }).catch(() => {});
+          await inp.clear({ timeout: 2_000 }).catch(() => {});
+          await inp.pressSequentially(starts[i], { delay: 20 });
+        }
+        log(`[wehago]   ✓ 기수 회계기간 = ${openYear}.01.01 ~ ${openYear}.12.31`);
+      } else {
+        log(`[wehago]   ✗ 기수 회계기간: input ${fiscalCount}개 (2개 이상 필요)`);
+      }
     } catch (e: any) {
-      log(`[wehago]   ✗ 개업년월일 실패: ${e.message}`);
+      log(`[wehago]   ✗ 기수 회계기간 실패: ${e.message}`);
     }
+
+    // 3) 인사연도
+    await fillByLabel('인사연도', openYear, '인사연도');
   }
 
   // Auto-submit is disabled for safety — the user should review the populated
