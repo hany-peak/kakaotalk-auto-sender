@@ -159,39 +159,45 @@ async function login(page: Page, creds: WehagoCreds, log: (m: string) => void): 
   log('[wehago] login successful');
 }
 
+const POPUP_CLOSE_SELECTORS = [
+  'button:has-text("오늘 하루 보지 않기")',
+  'button:has-text("오늘하루 보지 않기")',
+  'button:has-text("다시 보지 않기")',
+  'button:has-text("닫기")',
+  '[aria-label="닫기"]',
+  '[aria-label="close"]',
+  '.popup-close',
+  '.btn-close',
+  '.closeBtn',
+  '[class*="btn_close"]',
+];
+
 /**
- * Dismiss any promotional / notice / popup modals that appear after login.
- * Non-fatal: scans multiple common close-button patterns and clicks visible ones.
+ * Loop-based dismissal — WEHAGO stacks multiple popups sequentially (공지,
+ * 이벤트, 광고, etc.), each appearing only after the previous is closed.
+ * Scan + click one round → wait → repeat until no visible close button is
+ * found. Safety cap: max 20 rounds or 20s elapsed.
  */
 async function dismissPopups(page: Page, log: (m: string) => void): Promise<void> {
-  const closeSelectors = [
-    'button:has-text("오늘 하루 보지 않기")',
-    'button:has-text("오늘하루 보지 않기")',
-    'button:has-text("다시 보지 않기")',
-    'button:has-text("닫기")',
-    '[aria-label="닫기"]',
-    '[aria-label="close"]',
-    '.popup-close',
-    '.btn-close',
-    '.closeBtn',
-    '[class*="btn_close"]',
-  ];
-  let dismissed = 0;
-  for (const sel of closeSelectors) {
-    try {
-      const els = await page.locator(sel).all();
+  const start = Date.now();
+  let totalDismissed = 0;
+  for (let round = 0; round < 20; round++) {
+    if (Date.now() - start > 20_000) break;
+    let clickedThisRound = 0;
+    for (const sel of POPUP_CLOSE_SELECTORS) {
+      const els = await page.locator(sel).all().catch(() => []);
       for (const el of els) {
         if (await el.isVisible().catch(() => false)) {
           await el.click({ timeout: 2000 }).catch(() => {});
-          dismissed++;
-          await page.waitForTimeout(300);
+          clickedThisRound++;
+          totalDismissed++;
+          await page.waitForTimeout(400);
         }
       }
-    } catch {
-      /* ignore */
     }
+    if (clickedThisRound === 0) break; // stable — no more popups
   }
-  if (dismissed > 0) log(`[wehago] dismissed ${dismissed} popup(s)`);
+  if (totalDismissed > 0) log(`[wehago] dismissed ${totalDismissed} popup(s)`);
 }
 
 export interface RegisterResult {
