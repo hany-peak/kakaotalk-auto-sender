@@ -159,19 +159,37 @@ async function login(page: Page, creds: WehagoCreds, log: (m: string) => void): 
   log('[wehago] login successful');
 }
 
+// Elements that may represent a "close X" on a popup. Applied in order.
 const POPUP_CLOSE_SELECTORS = [
+  // Button-form close controls
   'button:has-text("오늘 하루 보지 않기")',
   'button:has-text("오늘하루 보지 않기")',
   'button:has-text("하루 동안 보지 않기")',
   'button:has-text("하루동안 보지 않기")',
   'button:has-text("다시 보지 않기")',
   'button:has-text("닫기")',
+  'button:has-text("확인")',   // 알림 confirm-style modals
+  // Aria + class-based X icons
   '[aria-label="닫기"]',
   '[aria-label="close"]',
+  '[aria-label="Close"]',
   '.popup-close',
   '.btn-close',
   '.closeBtn',
   '[class*="btn_close"]',
+  '[class*="btnClose"]',
+  '[class*="close-btn"]',
+  '[class*="popup_close"]',
+  '[class*="ico_close"]',
+];
+
+// Labels for "don't show again" checkboxes — click to suppress on next login.
+const SUPPRESS_CHECKBOX_LABELS = [
+  '하루 동안 보지 않기',
+  '하루동안 보지 않기',
+  '오늘 하루 보지 않기',
+  '오늘하루 보지 않기',
+  '다시 보지 않기',
 ];
 
 /**
@@ -183,9 +201,27 @@ const POPUP_CLOSE_SELECTORS = [
 async function dismissPopups(page: Page, log: (m: string) => void): Promise<void> {
   const start = Date.now();
   let totalDismissed = 0;
-  for (let round = 0; round < 20; round++) {
-    if (Date.now() - start > 20_000) break;
+
+  for (let round = 0; round < 25; round++) {
+    if (Date.now() - start > 30_000) break;
     let clickedThisRound = 0;
+
+    // 1) Tick "don't show again" checkboxes first so they won't come back.
+    for (const label of SUPPRESS_CHECKBOX_LABELS) {
+      const textLoc = page.getByText(label, { exact: false });
+      const count = await textLoc.count().catch(() => 0);
+      for (let i = 0; i < count; i++) {
+        const item = textLoc.nth(i);
+        if (!(await item.isVisible().catch(() => false))) continue;
+        // Find the associated checkbox: label is a span/label near a checkbox
+        // input. Try clicking the label itself first (most label→input pairs
+        // react to label click).
+        await item.click({ timeout: 1500 }).catch(() => {});
+        await page.waitForTimeout(200);
+      }
+    }
+
+    // 2) Click X close controls.
     for (const sel of POPUP_CLOSE_SELECTORS) {
       const els = await page.locator(sel).all().catch(() => []);
       for (const el of els) {
@@ -197,7 +233,12 @@ async function dismissPopups(page: Page, log: (m: string) => void): Promise<void
         }
       }
     }
-    if (clickedThisRound === 0) break; // stable — no more popups
+
+    // 3) As a fallback, Escape often dismisses modals.
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.waitForTimeout(300);
+
+    if (clickedThisRound === 0) break; // stable
   }
   if (totalDismissed > 0) log(`[wehago] dismissed ${totalDismissed} popup(s)`);
 }
