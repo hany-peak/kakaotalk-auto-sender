@@ -268,9 +268,8 @@ async function dismissPopups(page: Page, log: (m: string) => void): Promise<void
 }
 
 /**
- * WEHAGO custom dropdowns are not native <select> — they're clickable divs
- * with a text span inside. Multi-strategy: try clicking the text node, then
- * its parent, then an actionable ancestor, then combobox role.
+ * WEHAGO custom dropdown. text span 은 click 이 부모 div 에 걸려 있어서
+ * 부모를 클릭해야 열림. 옵션은 열린 뒤 새로 나타나는 text 를 직접 클릭.
  */
 async function selectCustomDropdown(
   page: Page,
@@ -283,51 +282,12 @@ async function selectCustomDropdown(
     log(`[wehago] ${labelHint} already at "${targetText}"`);
     return;
   }
-
-  // --- Open the dropdown (try multiple strategies) ---
-  const textLoc = page.getByText(currentText, { exact: true }).first();
-  const triggerStrategies: Array<[string, () => Promise<void>]> = [
-    ['text', () => textLoc.click({ timeout: 1500 })],
-    ['parent', () => textLoc.locator('xpath=..').click({ timeout: 1500 })],
-    ['grandparent', () => textLoc.locator('xpath=../..').click({ timeout: 1500 })],
-    ['role-ancestor', () => textLoc.locator('xpath=ancestor::*[self::button or @role="button" or @role="combobox"][1]').click({ timeout: 1500 })],
-    ['combobox-filter', () => page.getByRole('combobox').filter({ hasText: currentText }).first().click({ timeout: 1500 })],
-  ];
-  let opened = false;
-  for (const [name, strat] of triggerStrategies) {
-    try {
-      await strat();
-      opened = true;
-      log(`[wehago] ${labelHint} trigger opened via ${name}`);
-      break;
-    } catch {
-      /* next strategy */
-    }
-  }
-  if (!opened) {
-    await page.screenshot({ path: `/tmp/wehago-${labelHint}-trigger-fail.png` }).catch(() => {});
-    throw new Error(`${labelHint} 드롭다운 trigger 열기 실패 (${currentText}) — screenshot /tmp/wehago-${labelHint}-trigger-fail.png`);
-  }
-  await page.waitForTimeout(500);
-
-  // --- Click the target option ---
-  const optionStrategies: Array<[string, () => Promise<void>]> = [
-    ['role-option', () => page.getByRole('option', { name: targetText }).first().click({ timeout: 2000 })],
-    ['text', () => page.getByText(targetText, { exact: true }).first().click({ timeout: 2000 })],
-    ['li', () => page.locator(`li:has-text("${targetText}")`).first().click({ timeout: 2000 })],
-  ];
-  for (const [name, strat] of optionStrategies) {
-    try {
-      await strat();
-      await page.waitForTimeout(300);
-      log(`[wehago] ${labelHint}: ${currentText} → ${targetText} (opt via ${name})`);
-      return;
-    } catch {
-      /* next strategy */
-    }
-  }
-  await page.screenshot({ path: `/tmp/wehago-${labelHint}-option-fail.png` }).catch(() => {});
-  throw new Error(`${labelHint} 옵션 선택 실패 (${targetText}) — screenshot saved`);
+  const trigger = page.getByText(currentText, { exact: true }).first().locator('xpath=..');
+  await trigger.click({ timeout: 3000 });
+  await page.waitForTimeout(400);
+  await page.getByText(targetText, { exact: true }).first().click({ timeout: 3000 });
+  await page.waitForTimeout(200);
+  log(`[wehago] ${labelHint}: ${currentText} → ${targetText}`);
 }
 
 export interface RegisterResult {
