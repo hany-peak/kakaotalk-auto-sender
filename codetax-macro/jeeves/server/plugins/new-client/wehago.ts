@@ -181,7 +181,28 @@ const POPUP_CLOSE_SELECTORS = [
   '[class*="close-btn"]',
   '[class*="popup_close"]',
   '[class*="ico_close"]',
+  // WEHAGO common dialog (commonDlg209 etc.) close icons
+  '[class*="commonDlg"] [class*="close"]',
+  '[class*="commonDlg"] button[class*="ico"]',
+  '[class*="commonDlg"] [class*="btn_x"]',
 ];
+
+// Fallback: hide WEHAGO commonDlg overlays via JS when clicks can't find them.
+async function forceHideCommonDialogs(page: Page, log: (m: string) => void): Promise<void> {
+  const hidden = await page.evaluate(() => {
+    const selectors = '[class*="commonDlg"], [class*="dialog_data_area"]';
+    let count = 0;
+    document.querySelectorAll(selectors).forEach((el) => {
+      const r = (el as HTMLElement).getBoundingClientRect();
+      if (r.width > 100 && r.height > 100) {
+        (el as HTMLElement).style.display = 'none';
+        count++;
+      }
+    });
+    return count;
+  }).catch(() => 0);
+  if (hidden > 0) log(`[wehago] force-hid ${hidden} commonDlg overlay(s)`);
+}
 
 // Labels for "don't show again" checkboxes — click to suppress on next login.
 const SUPPRESS_CHECKBOX_LABELS = [
@@ -241,6 +262,43 @@ async function dismissPopups(page: Page, log: (m: string) => void): Promise<void
     if (clickedThisRound === 0) break; // stable
   }
   if (totalDismissed > 0) log(`[wehago] dismissed ${totalDismissed} popup(s)`);
+
+  // If any commonDlg* overlay remains (stubborn ones without recognizable
+  // close buttons), just hide it via JS so it doesn't intercept clicks.
+  await forceHideCommonDialogs(page, log);
+}
+
+/**
+ * WEHAGO custom dropdowns are not native <select> — they're clickable divs
+ * that reveal an options list. currentText is the default value shown; target
+ * is the value we want selected. No-op when already equal.
+ */
+async function selectCustomDropdown(
+  page: Page,
+  currentText: string,
+  targetText: string,
+  log: (m: string) => void,
+  labelHint: string,
+): Promise<void> {
+  if (currentText === targetText) {
+    log(`[wehago] ${labelHint} already at "${targetText}"`);
+    return;
+  }
+  // Click the trigger showing current value. In WEHAGO the trigger appears
+  // once; after opening, the same text may show in the options list too.
+  const trigger = page.getByText(currentText, { exact: true }).first();
+  await trigger.click({ timeout: 5_000 }).catch((e: Error) => {
+    throw new Error(`${labelHint} 드롭다운 trigger 클릭 실패 (${currentText}): ${e.message}`);
+  });
+  await page.waitForTimeout(500);
+  // Click the target option. If target text didn't exist before opening,
+  // .first() reliably hits the newly-visible option.
+  const option = page.getByText(targetText, { exact: true }).first();
+  await option.click({ timeout: 5_000 }).catch((e: Error) => {
+    throw new Error(`${labelHint} option 클릭 실패 (${targetText}): ${e.message}`);
+  });
+  await page.waitForTimeout(300);
+  log(`[wehago] ${labelHint}: ${currentText} → ${targetText}`);
 }
 
 export interface RegisterResult {
@@ -282,29 +340,48 @@ export async function registerWehagoClient(
   log('[wehago] selecting 신규 회사로 생성');
   await page.getByText('신규 회사로 생성').first().click();
 
-  // Wait for the 수임처 신규생성 modal.
+  // Wait for the 수임처 신규생성 modal heading so subsequent fills see a
+  // fully-rendered form (and popup animations are done).
+  await page.waitForSelector('text=수임처 신규생성', { timeout: 10_000 });
+  await page.waitForTimeout(800);
+
   log('[wehago] filling form');
   await page.getByPlaceholder('회사명을 입력하세요').fill(form.companyName);
-  // 회사구분 드롭다운 - select by label.
-  await page.getByLabel('회사구분').selectOption({ label: form.entityType });
+
+  // 회사구분 — custom dropdown. Default shows 0.법인사업자; if we need 개인사업자,
+  // click the trigger text and then the option text.
+  await selectCustomDropdown(page, '0.법인사업자', form.entityType, log, '회사구분');
+
   await page.getByPlaceholder('대표자명을 입력하세요').fill(form.representative);
-  await page.getByPlaceholder('사업자등록번호를 입력하세').fill(form.bizRegNumber);
+
+  // Some placeholders render truncated; use substring match on input placeholder.
+  await page.locator('input[placeholder*="사업자등록번호"]').first().fill(form.bizRegNumber).catch((e: Error) =>
+    log(`[wehago] 사업자등록번호 입력 실패: ${e.message}`),
+  );
+
   if (form.corpRegNumber) {
-    await page.getByPlaceholder('법인등록번호를 입력해주세요.').fill(form.corpRegNumber);
+    await page.locator('input[placeholder*="법인등록번호"]').first().fill(form.corpRegNumber).catch((e: Error) =>
+      log(`[wehago] 법인등록번호 skip: ${e.message}`),
+    );
   }
   if (form.bizAddress) {
-    await page.getByPlaceholder('나머지 주소를 입력하세요').fill(form.bizAddress);
+    await page.locator('input[placeholder*="나머지 주소"]').first().fill(form.bizAddress).catch(() => {});
   }
   if (form.industry) {
-    await page.getByPlaceholder('업종을 입력하세요').fill(form.industry);
+    await page.locator('input[placeholder*="업종을"]').first().fill(form.industry).catch(() => {});
   }
-  await page.getByLabel('서비스 제공형태').selectOption({ label: form.scope });
+
+  // 서비스 제공형태 — custom dropdown. Default 0.기장.
+  await selectCustomDropdown(page, '0.기장', form.scope, log, '서비스 제공형태');
+
   if (form.openDate) {
-    // 개업년월일 input — date picker. Try direct fill.
-    const openDateInput = page.locator('input').filter({ has: page.locator('[placeholder=""]') }).nth(0);
-    await openDateInput.fill(form.openDate).catch(() => {
-      log('[wehago] 개업년월일 자동 입력 실패 — 수동 확인 필요');
-    });
+    // 개업년월일 — date picker input in 회계/급여관리 section.
+    // Find by proximity to "개업년월일" label cell.
+    const openDateFormatted = form.openDate.replace(/-/g, '.');
+    const openDateInput = page.locator('text=개업년월일').locator('..').locator('input').first();
+    await openDateInput.fill(openDateFormatted).catch((e: Error) =>
+      log(`[wehago] 개업년월일 입력 실패 (${e.message}) — 수동 확인 필요`),
+    );
   }
 
   log('[wehago] submitting');
