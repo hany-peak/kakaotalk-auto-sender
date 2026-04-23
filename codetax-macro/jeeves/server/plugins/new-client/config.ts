@@ -13,6 +13,7 @@ export interface NewClientConfig {
   airtableNewClientPat: string | undefined;
   airtableNewClientBaseId: string | undefined;
   airtableNewClientTableName: string;
+  airtableNewClientViewName: string;
   dropbox: {
     appKey: string | undefined;
     appSecret: string | undefined;
@@ -29,6 +30,7 @@ export function loadConfig(): NewClientConfig {
     airtableNewClientPat: process.env.AIRTABLE_NEW_CLIENT_PAT,
     airtableNewClientBaseId: process.env.AIRTABLE_NEW_CLIENT_BASE_ID,
     airtableNewClientTableName: process.env.AIRTABLE_NEW_CLIENT_TABLE_NAME || '거래처',
+    airtableNewClientViewName: process.env.AIRTABLE_NEW_CLIENT_VIEW || 'A. 수임체크리스트',
     dropbox: {
       appKey: process.env.DROPBOX_APP_KEY,
       appSecret: process.env.DROPBOX_APP_SECRET,

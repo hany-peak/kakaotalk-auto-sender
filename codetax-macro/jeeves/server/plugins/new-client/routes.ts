@@ -12,13 +12,23 @@ import {
   setDropboxFolderPath,
 } from './storage';
 import { notifyNewClient } from './slack';
-import { syncToAirtable, updateAirtableChecklist, pullFromAirtable } from './airtable';
-import { createClientFolders, extractCreds, getFolderStatus } from './dropbox';
 import {
-  computeProgress,
-  latestChecklistUpdate,
-  type ChecklistItemKey,
-} from './checklist-config';
+  syncToAirtable,
+  updateAirtableChecklist,
+  pullFromAirtable,
+  fetchViewList,
+  fetchAirtableRecord,
+  isAirtableId,
+} from './airtable';
+import {
+  createClientFolders,
+  extractCreds,
+  findClientFolder,
+  getFolderStatus,
+  resolveParentPath,
+} from './dropbox';
+import type { ChecklistItemKey } from './checklist-config';
+import type { NewClientRecord } from './types';
 
 export function registerNewClientRoutes(app: Express, ctx: ServerContext): void {
   app.post('/api/new-client/submit', async (req, res) => {
@@ -58,9 +68,6 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       });
     } else {
       try {
-        // validated.value.entityType is guaranteed non-undefined here
-        // (validate step guarantees it); record.entityType is typed optional
-        // only to accommodate legacy records loaded from disk.
         const out = await createClientFolders(
           validated.value.entityType,
           record.businessScope,
@@ -93,35 +100,29 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     });
   });
 
+  // List — passthrough from Airtable view (configured via AIRTABLE_NEW_CLIENT_VIEW).
   app.get('/api/new-client/list', async (_req, res) => {
     const cfg = loadConfig();
-    try {
-      const records = await readAll(cfg.dataFile);
-      const list = records.map((r) => ({
-        id: r.id,
-        companyName: r.companyName,
-        representative: r.representative,
-        industry: r.industry,
-        startDate: r.startDate,
-        createdAt: r.createdAt,
-        progress: computeProgress(r.checklist),
-        checklistUpdatedAt: latestChecklistUpdate(r.checklist),
-      }));
-      res.json(list);
-    } catch (err: any) {
-      ctx.logError(`[new-client] list failed: ${err.message || err}`);
-      res.status(500).json({ error: 'failed to read records' });
+    const list = await fetchViewList(cfg, ctx.logError);
+    if (list === null) {
+      return res.status(500).json({ error: 'airtable fetch failed' });
     }
+    res.json(list);
   });
 
+  // Detail — for Airtable ids (rec...), fetch from Airtable. For local UUIDs,
+  // use local storage with Airtable pull for checklist freshness.
   app.get('/api/new-client/:id', async (req, res) => {
     const cfg = loadConfig();
     try {
+      if (isAirtableId(req.params.id)) {
+        const record = await fetchAirtableRecord(req.params.id, cfg, ctx.logError);
+        if (!record) return res.status(404).json({ error: 'not found' });
+        return res.json(record);
+      }
       let record = await readOne(cfg.dataFile, req.params.id);
       if (!record) return res.status(404).json({ error: 'not found' });
 
-      // Airtable 에 연결된 레코드면 현재 값을 당겨와서 checklist 에 반영한다.
-      // Airtable 실패 시 조용히 로컬 상태만 반환 (네트워크 이슈 등에 그레이스풀).
       if (record.airtableRecordId) {
         const patch = await pullFromAirtable(
           record.airtableRecordId,
@@ -154,7 +155,28 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     }
 
     const cfg = loadConfig();
+    const now = new Date().toISOString();
     try {
+      if (isAirtableId(req.params.id)) {
+        // Airtable-only record: go direct to reverse-sync, no local storage.
+        const newState = {
+          updatedAt: now,
+          ...(validation.payload.status !== undefined && { status: validation.payload.status }),
+          ...(validation.payload.value !== undefined && { value: validation.payload.value }),
+          ...(validation.payload.note !== undefined && { note: validation.payload.note }),
+        };
+        const ok = await updateAirtableChecklist(
+          req.params.id,
+          req.params.itemKey as ChecklistItemKey,
+          newState,
+          cfg,
+          ctx.logError,
+        );
+        if (!ok) return res.status(500).json({ error: 'airtable update failed' });
+        ctx.log(`[new-client] checklist updated (airtable): id=${req.params.id} item=${req.params.itemKey}`);
+        return res.json({ ok: true, itemKey: req.params.itemKey, state: newState });
+      }
+
       const updated = await updateChecklistItem(
         cfg.dataFile,
         req.params.id,
@@ -170,9 +192,6 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
             : `status=${updated.status ?? ''}`),
       );
 
-      // Reverse sync to Airtable if this item has a mapping and the record was
-      // originally synced. Non-blocking: failures are logged but don't affect
-      // the PATCH response.
       const record = await readOne(cfg.dataFile, req.params.id);
       if (record?.airtableRecordId) {
         await updateAirtableChecklist(
@@ -191,24 +210,37 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     }
   });
 
+  // Resolve a record from either local storage or Airtable for dropbox endpoints.
+  async function resolveRecord(id: string): Promise<NewClientRecord | null> {
+    const cfg = loadConfig();
+    if (isAirtableId(id)) {
+      return fetchAirtableRecord(id, cfg, ctx.logError);
+    }
+    return readOne(cfg.dataFile, id);
+  }
+
   app.get('/api/new-client/:id/dropbox-status', async (req, res) => {
     const cfg = loadConfig();
     try {
-      const record = await readOne(cfg.dataFile, req.params.id);
+      const record = await resolveRecord(req.params.id);
       if (!record) return res.status(404).json({ error: 'not found' });
-      if (!record.dropboxFolderPath) {
+
+      const creds = extractCreds(cfg);
+      if (!creds) return res.status(500).json({ error: 'dropbox env missing' });
+
+      // Prefer tracked path when available (local records). Otherwise derive
+      // via parent listing + name match (Airtable records).
+      let path = record.dropboxFolderPath ?? null;
+      if (!path && record.entityType) {
+        const parent = resolveParentPath(record.entityType, record.businessScope);
+        path = await findClientFolder(parent, record.companyName, creds);
+      }
+
+      if (!path) {
         return res.json({ path: null, exists: false, files: [] });
       }
-      const creds = extractCreds(cfg);
-      if (!creds) {
-        return res.status(500).json({ error: 'dropbox env missing' });
-      }
-      const status = await getFolderStatus(record.dropboxFolderPath, creds);
-      res.json({
-        path: record.dropboxFolderPath,
-        exists: status.exists,
-        files: status.baseFiles,
-      });
+      const status = await getFolderStatus(path, creds);
+      res.json({ path, exists: status.exists, files: status.baseFiles });
     } catch (err: any) {
       const msg = err?.message ?? String(err);
       ctx.logError(`[new-client] dropbox status failed: ${msg}`);
@@ -219,20 +251,26 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
   app.post('/api/new-client/:id/dropbox-folder/retry', async (req, res) => {
     const cfg = loadConfig();
     const now = () => new Date().toISOString();
+    const id = req.params.id;
+    const isAirtable = isAirtableId(id);
     try {
-      const record = await readOne(cfg.dataFile, req.params.id);
+      const record = await resolveRecord(id);
       if (!record) return res.status(404).json({ error: 'not found' });
       if (!record.entityType) {
-        await mergeChecklist(cfg.dataFile, record.id, {
-          dropboxFolder: { status: 'error', note: '기존 레코드 — entityType 없음, 재등록 필요', updatedAt: now() },
-        });
+        if (!isAirtable) {
+          await mergeChecklist(cfg.dataFile, id, {
+            dropboxFolder: { status: 'error', note: '기존 레코드 — entityType 없음, 재등록 필요', updatedAt: now() },
+          });
+        }
         return res.status(400).json({ error: 'record has no entityType (legacy record)' });
       }
       const creds = extractCreds(cfg);
       if (!creds) {
-        await mergeChecklist(cfg.dataFile, record.id, {
-          dropboxFolder: { status: 'error', note: 'DROPBOX_* env 미설정', updatedAt: now() },
-        });
+        if (!isAirtable) {
+          await mergeChecklist(cfg.dataFile, id, {
+            dropboxFolder: { status: 'error', note: 'DROPBOX_* env 미설정', updatedAt: now() },
+          });
+        }
         return res.status(500).json({ error: 'dropbox env missing' });
       }
       const out = await createClientFolders(
@@ -241,17 +279,23 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
         record.companyName,
         creds,
       );
-      await setDropboxFolderPath(cfg.dataFile, record.id, out.path);
+      if (!isAirtable) {
+        await setDropboxFolderPath(cfg.dataFile, id, out.path);
+        await mergeChecklist(cfg.dataFile, id, {
+          dropboxFolder: { status: 'done', updatedAt: now() },
+        });
+      }
       const newState = { status: 'done', updatedAt: now() };
-      await mergeChecklist(cfg.dataFile, record.id, { dropboxFolder: newState });
-      ctx.log(`[new-client] dropbox retry ok: id=${record.id} path=${out.path}`);
+      ctx.log(`[new-client] dropbox retry ok: id=${id} path=${out.path}`);
       res.json({ ok: true, path: out.path, state: newState });
     } catch (err: any) {
       const msg = err?.message ?? String(err);
       ctx.logError(`[new-client] dropbox retry failed: ${msg}`);
-      await mergeChecklist(cfg.dataFile, req.params.id, {
-        dropboxFolder: { status: 'error', note: msg.slice(0, 500), updatedAt: now() },
-      });
+      if (!isAirtable) {
+        await mergeChecklist(cfg.dataFile, id, {
+          dropboxFolder: { status: 'error', note: msg.slice(0, 500), updatedAt: now() },
+        });
+      }
       res.status(500).json({ error: msg });
     }
   });

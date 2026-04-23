@@ -4,9 +4,14 @@ import type {
   BusinessScope,
   BizRegStatus,
   ChecklistItemState,
+  ChecklistState,
+  EntityType,
+  Industry,
+  NewClientListItem,
   NewClientRecord,
 } from './types';
 import type { ChecklistItemKey } from './checklist-config';
+import { CHECKLIST_ITEMS, isItemDone } from './checklist-config';
 
 const BUSINESS_SCOPE_MAP: Record<BusinessScope, string> = {
   '기장': '1.기장',
@@ -18,18 +23,30 @@ const BIZ_REG_MAP: Record<BizRegStatus, string> = {
   '신규생성': '자료요청',
 };
 
+// Reverse maps (Airtable → app types) for reading records.
+const ENTITY_TYPE_FROM_AIRTABLE: Record<string, EntityType> = {
+  '가.법인': '법인',
+  '나.개인': '개인',
+};
+
+const BUSINESS_SCOPE_FROM_AIRTABLE: Record<string, BusinessScope> = {
+  '1.기장': '기장',
+  '2.신고대리': '신고대리',
+};
+
 export function buildAirtableFields(r: NewClientRecord): Record<string, unknown> {
   const fields: Record<string, unknown> = {
     '업체명': r.companyName,
     '대표자': r.representative,
     '업무착수일': r.startDate,
-    '기장료': r.bookkeepingFee,
-    '유입경로': r.inflowRoute,
     '상태': '2.계약중',
     '업무범위': BUSINESS_SCOPE_MAP[r.businessScope],
-    '사업자등록증': BIZ_REG_MAP[r.bizRegStatus],
-    '홈택스 업종': [r.industry],
   };
+
+  if (r.bookkeepingFee !== undefined) fields['기장료'] = r.bookkeepingFee;
+  if (r.inflowRoute !== undefined) fields['유입경로'] = r.inflowRoute;
+  if (r.bizRegStatus !== undefined) fields['사업자등록증'] = BIZ_REG_MAP[r.bizRegStatus];
+  if (r.industry !== undefined) fields['홈택스 업종'] = [r.industry];
 
   if (r.contractNote && r.contractNote.trim() !== '') {
     fields['계약특이사항'] = r.contractNote;
@@ -240,4 +257,151 @@ export async function pullFromAirtable(
     logError(`[new-client] airtable pull failed: ${err.message || err}`);
     return null;
   }
+}
+
+// ============================================================================
+// Airtable → NewClientRecord / NewClientListItem (list passthrough)
+// ============================================================================
+
+/** Extract first element if the field is an array (Airtable multi-select/linked). */
+function firstString(v: unknown): string | undefined {
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v) && typeof v[0] === 'string') return v[0];
+  return undefined;
+}
+
+function firstNumber(v: unknown): number | undefined {
+  if (typeof v === 'number') return v;
+  return undefined;
+}
+
+/**
+ * Convert raw Airtable fields → ChecklistState via REVERSE_MAPPINGS.
+ * Items with no mapping are omitted (remain undefined in the returned state).
+ */
+export function airtableToChecklist(
+  fields: Record<string, unknown>,
+  now: string = new Date().toISOString(),
+): ChecklistState {
+  const out: ChecklistState = {};
+  for (const [rawKey, mapping] of Object.entries(REVERSE_MAPPINGS)) {
+    if (!mapping) continue;
+    const partial = mapping.fromFields(fields);
+    if (!partial) continue;
+    out[rawKey as ChecklistItemKey] = {
+      updatedAt: now,
+      ...partial,
+    };
+  }
+  return out;
+}
+
+/** Convert an Airtable record → NewClientRecord shape. Missing fields become undefined. */
+export function airtableToRecord(
+  airtableRecordId: string,
+  fields: Record<string, unknown>,
+  createdTime: string | undefined,
+): NewClientRecord {
+  const entityTypeRaw = typeof fields['기업구분'] === 'string' ? (fields['기업구분'] as string) : undefined;
+  const scopeRaw = typeof fields['업무범위'] === 'string' ? (fields['업무범위'] as string) : undefined;
+  const industryArr = fields['홈택스 업종'];
+  const industry = firstString(industryArr) as Industry | undefined;
+  const createdAt = createdTime ?? new Date().toISOString();
+  return {
+    id: airtableRecordId,
+    airtableRecordId,
+    createdAt,
+    companyName: (fields['업체명'] as string) ?? '(이름 없음)',
+    representative: (fields['대표자'] as string) ?? '',
+    startDate: (fields['업무착수일'] as string) ?? '',
+    businessScope: (scopeRaw ? BUSINESS_SCOPE_FROM_AIRTABLE[scopeRaw] : undefined) ?? '기장',
+    entityType: entityTypeRaw ? ENTITY_TYPE_FROM_AIRTABLE[entityTypeRaw] : undefined,
+    industry,
+    bookkeepingFee: firstNumber(fields['기장료']),
+    contractNote: typeof fields['계약특이사항'] === 'string' ? (fields['계약특이사항'] as string) : undefined,
+    transferSourceOffice: typeof fields['이관사무실'] === 'string' ? (fields['이관사무실'] as string) : undefined,
+    transferReason: typeof fields['이관사유'] === 'string' ? (fields['이관사유'] as string) : undefined,
+    checklist: airtableToChecklist(fields, createdAt),
+  };
+}
+
+function computeProgressFromChecklist(checklist: ChecklistState): { done: number; total: number } {
+  let done = 0;
+  for (const def of CHECKLIST_ITEMS) {
+    if (isItemDone(def, checklist[def.key])) done++;
+  }
+  return { done, total: CHECKLIST_ITEMS.length };
+}
+
+function latestUpdateFromChecklist(checklist: ChecklistState): string | undefined {
+  let latest: string | undefined;
+  for (const state of Object.values(checklist)) {
+    if (!state) continue;
+    if (!latest || state.updatedAt > latest) latest = state.updatedAt;
+  }
+  return latest;
+}
+
+/**
+ * Fetch all records from the configured 거래처 view and convert them to
+ * NewClientListItem. Paginates through Airtable automatically.
+ * Returns `null` on any failure (missing config, network, API error).
+ */
+export async function fetchViewList(
+  cfg: NewClientConfig,
+  logError: (msg: string) => void,
+): Promise<NewClientListItem[] | null> {
+  if (!cfg.airtableNewClientPat || !cfg.airtableNewClientBaseId) {
+    logError('[new-client] airtable env missing — cannot fetch view list');
+    return null;
+  }
+  try {
+    const base = new Airtable({ apiKey: cfg.airtableNewClientPat }).base(cfg.airtableNewClientBaseId);
+    const records = await base(cfg.airtableNewClientTableName)
+      .select({ view: cfg.airtableNewClientViewName })
+      .all();
+    return records.map((r) => {
+      const fields = r.fields as Record<string, unknown>;
+      const checklist = airtableToChecklist(fields);
+      return {
+        id: r.id,
+        companyName: (fields['업체명'] as string) ?? '(이름 없음)',
+        representative: (fields['대표자'] as string) ?? '',
+        industry: firstString(fields['홈택스 업종']),
+        startDate: (fields['업무착수일'] as string) ?? '',
+        createdAt: (r as unknown as { _rawJson?: { createdTime?: string } })._rawJson?.createdTime,
+        progress: computeProgressFromChecklist(checklist),
+        checklistUpdatedAt: latestUpdateFromChecklist(checklist),
+      };
+    });
+  } catch (err: any) {
+    logError(`[new-client] airtable view fetch failed: ${err.message || err}`);
+    return null;
+  }
+}
+
+/**
+ * Fetch a single record by Airtable record id and return as NewClientRecord.
+ * Returns null on missing config, 404, or any other error.
+ */
+export async function fetchAirtableRecord(
+  airtableRecordId: string,
+  cfg: NewClientConfig,
+  logError: (msg: string) => void,
+): Promise<NewClientRecord | null> {
+  if (!cfg.airtableNewClientPat || !cfg.airtableNewClientBaseId) return null;
+  try {
+    const base = new Airtable({ apiKey: cfg.airtableNewClientPat }).base(cfg.airtableNewClientBaseId);
+    const rec = await base(cfg.airtableNewClientTableName).find(airtableRecordId);
+    const fields = rec.fields as Record<string, unknown>;
+    const createdTime = (rec as unknown as { _rawJson?: { createdTime?: string } })._rawJson?.createdTime;
+    return airtableToRecord(airtableRecordId, fields, createdTime);
+  } catch (err: any) {
+    logError(`[new-client] airtable fetch record ${airtableRecordId} failed: ${err.message || err}`);
+    return null;
+  }
+}
+
+export function isAirtableId(id: string): boolean {
+  return id.startsWith('rec') && id.length >= 14;
 }

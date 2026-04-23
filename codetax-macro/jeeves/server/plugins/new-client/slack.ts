@@ -33,8 +33,8 @@ export function buildBlocks(r: NewClientRecord): any[] {
         { type: 'mrkdwn', text: `*업무착수일*\n${r.startDate}` },
         { type: 'mrkdwn', text: `*업종*\n${r.industry}` },
         { type: 'mrkdwn', text: `*유입경로*\n${r.inflowRoute}` },
-        { type: 'mrkdwn', text: `*기장료*\n${formatWon(r.bookkeepingFee)}` },
-        { type: 'mrkdwn', text: `*조정료*\n${formatWon(r.adjustmentFee)}` },
+        { type: 'mrkdwn', text: `*기장료*\n${r.bookkeepingFee !== undefined ? formatWon(r.bookkeepingFee) : '-'}` },
+        { type: 'mrkdwn', text: `*조정료*\n${r.adjustmentFee !== undefined ? formatWon(r.adjustmentFee) : '-'}` },
       ],
     },
   ];

@@ -67,12 +67,31 @@ export interface NewClientInput {
   transferReason?: string;
 }
 
-export interface NewClientRecord extends Omit<NewClientInput, 'entityType'> {
+/**
+ * Airtable 에서 읽어온 레코드도 수용하므로 Jeeves 등록에서만 필수인 필드들을 optional 로 완화.
+ */
+export interface NewClientRecord
+  extends Omit<
+    NewClientInput,
+    | 'entityType'
+    | 'inflowRoute'
+    | 'transferStatus'
+    | 'bizRegStatus'
+    | 'industry'
+    | 'bookkeepingFee'
+    | 'adjustmentFee'
+  > {
   id: string;
   createdAt: string;
   checklist: ChecklistState;
   entityType?: EntityType;
   dropboxFolderPath?: string;
+  inflowRoute?: InflowRoute;
+  transferStatus?: TransferStatus;
+  bizRegStatus?: BizRegStatus;
+  industry?: Industry;
+  bookkeepingFee?: number;
+  adjustmentFee?: number;
 }
 
 export interface NewClientListItem {

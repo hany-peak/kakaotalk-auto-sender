@@ -210,23 +210,22 @@ function DetailView({
 function InfoCard({ record }: { record: NewClientRecord }) {
   const fields: Array<[string, string]> = [
     ['업무 범위', record.businessScope],
-    ['업종', record.industry],
     ['업무착수일', record.startDate],
-    ['기장료', `${record.bookkeepingFee.toLocaleString('en-US')}원`],
-    ['조정료', `${record.adjustmentFee.toLocaleString('en-US')}원`],
-    ['유입경로', record.inflowRoute],
-    ['이관여부', record.transferStatus],
-    ['사업자 생성여부', record.bizRegStatus],
   ];
-  if (record.transferSourceOffice) {
-    fields.push(['이관사무실', record.transferSourceOffice]);
+  if (record.entityType) fields.push(['사업자 형태', record.entityType]);
+  if (record.industry) fields.push(['업종', record.industry]);
+  if (record.bookkeepingFee !== undefined) {
+    fields.push(['기장료', `${record.bookkeepingFee.toLocaleString('en-US')}원`]);
   }
-  if (record.transferReason) {
-    fields.push(['이관사유', record.transferReason]);
+  if (record.adjustmentFee !== undefined) {
+    fields.push(['조정료', `${record.adjustmentFee.toLocaleString('en-US')}원`]);
   }
-  if (record.dropboxFolderPath) {
-    fields.push(['Dropbox', record.dropboxFolderPath]);
-  }
+  if (record.inflowRoute) fields.push(['유입경로', record.inflowRoute]);
+  if (record.transferStatus) fields.push(['이관여부', record.transferStatus]);
+  if (record.bizRegStatus) fields.push(['사업자 생성여부', record.bizRegStatus]);
+  if (record.transferSourceOffice) fields.push(['이관사무실', record.transferSourceOffice]);
+  if (record.transferReason) fields.push(['이관사유', record.transferReason]);
+  if (record.dropboxFolderPath) fields.push(['Dropbox', record.dropboxFolderPath]);
   return (
     <div className="border border-border rounded p-4 space-y-2 text-sm">
       <div className="grid grid-cols-4 gap-3">

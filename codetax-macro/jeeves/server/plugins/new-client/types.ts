@@ -53,13 +53,45 @@ export interface NewClientInput {
   transferReason?: string;
 }
 
-export interface NewClientRecord extends Omit<NewClientInput, 'entityType'> {
+/**
+ * Airtable 에서 읽어온 레코드도 수용해야 하므로, jeeves 로컬 등록에서만 필수인
+ * 필드들(`inflowRoute`, `transferStatus`, `bizRegStatus`, `industry`,
+ * `bookkeepingFee`, `adjustmentFee`)을 optional 로 완화한다.
+ */
+export interface NewClientRecord
+  extends Omit<
+    NewClientInput,
+    | 'entityType'
+    | 'inflowRoute'
+    | 'transferStatus'
+    | 'bizRegStatus'
+    | 'industry'
+    | 'bookkeepingFee'
+    | 'adjustmentFee'
+  > {
   id: string;
   createdAt: string; // ISO 8601
   checklist: ChecklistState;
-  airtableRecordId?: string; // 등록 시 Airtable 에 생성된 레코드 ID. 없으면 역동기화 불가.
-  entityType?: EntityType;       // 신규 레코드엔 존재, 기존 레코드엔 undefined
-  dropboxFolderPath?: string;    // 생성 성공 시 전체 경로 저장
+  airtableRecordId?: string;
+  entityType?: EntityType;
+  dropboxFolderPath?: string;
+  inflowRoute?: InflowRoute;
+  transferStatus?: TransferStatus;
+  bizRegStatus?: BizRegStatus;
+  industry?: Industry;
+  bookkeepingFee?: number;
+  adjustmentFee?: number;
+}
+
+export interface NewClientListItem {
+  id: string; // airtableRecordId (when sourced from Airtable) or local UUID
+  companyName: string;
+  representative: string;
+  industry?: string;
+  startDate: string;
+  createdAt?: string;
+  progress: { done: number; total: number };
+  checklistUpdatedAt?: string;
 }
 
 export interface SubmitResponse {

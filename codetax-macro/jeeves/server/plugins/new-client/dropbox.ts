@@ -140,6 +140,46 @@ export async function listFolder(
   return entries;
 }
 
+/**
+ * Normalize a company name for folder matching. Strips leading-number prefixes
+ * from folder names ("096 (주)힐스타" → "(주)힐스타"), unifies legal-entity
+ * forms ("(주)" ≡ "주식회사"), and removes spaces.
+ */
+export function normalizeCompanyName(name: string): string {
+  return name
+    .replace(/^\d+\.?\s+/, '')
+    .replace(/주식회사/g, '(주)')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+/**
+ * Search the parent folder for a client folder matching the company name
+ * (case/space/entity-prefix insensitive). Returns full path or null.
+ * Used for stateless lookup when we only know companyName (Airtable records).
+ */
+export async function findClientFolder(
+  parentPath: string,
+  companyName: string,
+  creds: DropboxCreds,
+): Promise<string | null> {
+  try {
+    const entries = await listFolder(parentPath, creds);
+    const target = normalizeCompanyName(companyName);
+    for (const e of entries) {
+      if (e['.tag'] !== 'folder') continue;
+      if (normalizeCompanyName(e.name) === target) {
+        return `${parentPath}/${e.name}`;
+      }
+    }
+    return null;
+  } catch (err: any) {
+    const msg = err?.message ?? '';
+    if (msg.includes('path/not_found') || msg.includes('"not_found"')) return null;
+    throw err;
+  }
+}
+
 export interface FolderStatusResult {
   exists: boolean;
   baseFiles: string[];
