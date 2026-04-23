@@ -140,6 +140,37 @@ export async function listFolder(
   return entries;
 }
 
+export interface FolderStatusResult {
+  exists: boolean;
+  baseFiles: string[];
+}
+
+/**
+ * Checks whether the given client folder exists on Dropbox, and if so returns
+ * the file names inside its "1. 기초자료" subfolder. If the folder or its
+ * subfolder is missing (path/not_found), returns exists:false with empty files.
+ */
+export async function getFolderStatus(
+  clientPath: string,
+  creds: DropboxCreds,
+): Promise<FolderStatusResult> {
+  try {
+    const entries = await listFolder(`${clientPath}/1. 기초자료`, creds);
+    return {
+      exists: true,
+      baseFiles: entries
+        .filter((e) => e['.tag'] === 'file')
+        .map((e) => e.name),
+    };
+  } catch (err: any) {
+    const msg = err?.message ?? '';
+    if (msg.includes('path/not_found') || msg.includes('"not_found"')) {
+      return { exists: false, baseFiles: [] };
+    }
+    throw err;
+  }
+}
+
 export async function nextFolderNumber(
   parentPath: string,
   creds: DropboxCreds,

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useApi } from '../../../core/hooks/useApi';
 import type {
   ChecklistItemKey,
@@ -54,4 +54,40 @@ export function useDropboxRetry(clientId: string | null) {
   }, [api, clientId]);
 
   return { retry, pending };
+}
+
+export interface DropboxStatus {
+  path: string | null;
+  exists: boolean;
+  files: string[];
+}
+
+export function useDropboxStatus(clientId: string | null) {
+  const api = useApi();
+  const [data, setData] = useState<DropboxStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!clientId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.get<DropboxStatus>(`/new-client/${clientId}/dropbox-status`);
+      setData(res);
+    } catch (e: any) {
+      setError(e.message ?? 'failed');
+    } finally {
+      setLoading(false);
+    }
+    // useApi() returns a fresh object every render; excluding `api` from deps
+    // keeps refresh stable so the effect below doesn't fire on every parent re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { data, loading, error, refresh };
 }

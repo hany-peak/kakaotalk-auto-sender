@@ -13,7 +13,7 @@ import {
 } from './storage';
 import { notifyNewClient } from './slack';
 import { syncToAirtable, updateAirtableChecklist, pullFromAirtable } from './airtable';
-import { createClientFolders, extractCreds } from './dropbox';
+import { createClientFolders, extractCreds, getFolderStatus } from './dropbox';
 import {
   computeProgress,
   latestChecklistUpdate,
@@ -191,15 +191,37 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     }
   });
 
+  app.get('/api/new-client/:id/dropbox-status', async (req, res) => {
+    const cfg = loadConfig();
+    try {
+      const record = await readOne(cfg.dataFile, req.params.id);
+      if (!record) return res.status(404).json({ error: 'not found' });
+      if (!record.dropboxFolderPath) {
+        return res.json({ path: null, exists: false, files: [] });
+      }
+      const creds = extractCreds(cfg);
+      if (!creds) {
+        return res.status(500).json({ error: 'dropbox env missing' });
+      }
+      const status = await getFolderStatus(record.dropboxFolderPath, creds);
+      res.json({
+        path: record.dropboxFolderPath,
+        exists: status.exists,
+        files: status.baseFiles,
+      });
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      ctx.logError(`[new-client] dropbox status failed: ${msg}`);
+      res.status(500).json({ error: msg });
+    }
+  });
+
   app.post('/api/new-client/:id/dropbox-folder/retry', async (req, res) => {
     const cfg = loadConfig();
     const now = () => new Date().toISOString();
     try {
       const record = await readOne(cfg.dataFile, req.params.id);
       if (!record) return res.status(404).json({ error: 'not found' });
-      if (record.dropboxFolderPath) {
-        return res.status(409).json({ error: 'dropbox folder already created', path: record.dropboxFolderPath });
-      }
       if (!record.entityType) {
         await mergeChecklist(cfg.dataFile, record.id, {
           dropboxFolder: { status: 'error', note: '기존 레코드 — entityType 없음, 재등록 필요', updatedAt: now() },

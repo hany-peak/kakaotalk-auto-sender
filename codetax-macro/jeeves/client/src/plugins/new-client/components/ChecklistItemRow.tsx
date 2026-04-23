@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { isItemDone } from '../types';
 import { KATALK_TEMPLATES } from '../katalkTemplates';
-import { useDropboxRetry } from '../hooks/useChecklistUpdate';
+import { useDropboxRetry, useDropboxStatus, type DropboxStatus } from '../hooks/useChecklistUpdate';
 import type {
   ChecklistItemDefinition,
   ChecklistItemState,
@@ -26,11 +26,13 @@ function formatKst(iso: string | undefined): string {
 
 export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDropboxUpdate }: Props) {
   const done = isItemDone(def, state);
+  const isDropbox = def.key === 'dropboxFolder';
   const [localValue, setLocalValue] = useState<string>(state?.value ?? '');
   const [localNote, setLocalNote] = useState<string>(state?.note ?? '');
   const [err, setErr] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const { retry: retryDropbox, pending: dropboxRetrying } = useDropboxRetry(clientId);
+  const dropboxStatus = useDropboxStatus(isDropbox ? clientId : null);
 
   useEffect(() => {
     setLocalValue(state?.value ?? '');
@@ -72,6 +74,7 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
     try {
       const res = await retryDropbox();
       onDropboxUpdate?.({ status: res.state.status, updatedAt: res.state.updatedAt });
+      await dropboxStatus.refresh();
     } catch (e: any) {
       setErr(e.message ?? 'retry failed');
     }
@@ -105,8 +108,14 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
         )}
       </td>
       <td className="py-2 pr-3">
-        {def.key === 'dropboxFolder'
-          ? renderDropboxCell(state, dropboxRetrying, handleDropboxRetry)
+        {isDropbox
+          ? renderDropboxCell(
+              dropboxStatus.data,
+              dropboxStatus.loading,
+              dropboxStatus.error,
+              dropboxRetrying,
+              handleDropboxRetry,
+            )
           : renderEditor(def, state, localValue, setLocalValue, submitStatus, submitValue)}
         {err && <div className="text-danger text-xs mt-1">{err}</div>}
       </td>
@@ -127,30 +136,55 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
 }
 
 function renderDropboxCell(
-  state: ChecklistItemState | undefined,
+  data: DropboxStatus | null,
+  loading: boolean,
+  statusError: string | null,
   retrying: boolean,
-  onRetry: () => void,
+  onCreate: () => void,
 ) {
-  const status = state?.status ?? 'none';
-  if (status === 'done') {
-    return <span className="text-xs text-success">✓ 생성됨</span>;
+  if (loading && !data) {
+    return <span className="text-xs text-muted">확인 중...</span>;
   }
-  if (status === 'error') {
+  if (statusError) {
+    return <span className="text-xs text-danger">⚠ 확인 실패: {statusError}</span>;
+  }
+  if (!data || !data.exists) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-danger">❌ 실패</span>
+        <span className="text-xs text-muted">폴더 없음</span>
         <button
           type="button"
-          onClick={onRetry}
+          onClick={onCreate}
           disabled={retrying}
           className="px-2 py-0.5 text-xs border border-border rounded hover:bg-surface2 disabled:opacity-50"
         >
-          {retrying ? '재시도 중...' : '재시도'}
+          {retrying ? '생성 중...' : '폴더 생성'}
         </button>
       </div>
     );
   }
-  return <span className="text-xs text-muted">대기</span>;
+  return (
+    <details className="text-xs group">
+      <summary className="cursor-pointer list-none flex items-center gap-1 text-success">
+        <span className="text-muted group-open:rotate-90 inline-block transition-transform">▸</span>
+        <span>✓ 생성됨 · 기초자료 {data.files.length}개</span>
+      </summary>
+      <div className="mt-2 ml-4 space-y-1 text-muted">
+        {data.path && (
+          <div className="break-all text-[11px]">
+            <span className="opacity-70">경로:</span> {data.path}
+          </div>
+        )}
+        {data.files.length > 0 ? (
+          <ul className="list-disc ml-4 space-y-0.5 text-[11px]">
+            {data.files.map((f) => <li key={f}>{f}</li>)}
+          </ul>
+        ) : (
+          <div className="text-[11px] italic">(기초자료 폴더가 비어있음)</div>
+        )}
+      </div>
+    </details>
+  );
 }
 
 function renderEditor(
