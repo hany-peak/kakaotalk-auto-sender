@@ -392,12 +392,9 @@ export async function registerWehagoClient(
   }
 
   await fillByPlaceholder('대표자명', form.representative, '대표자명');
-  // 사업자등록번호 / 법인등록번호 는 hyphen 을 mask 가 자동 삽입 — 숫자만 입력.
+  // 사업자등록번호 는 hyphen 을 mask 가 자동 삽입 — 숫자만 입력.
   await fillByPlaceholder('사업자등록번호', form.bizRegNumber.replace(/-/g, ''), '사업자등록번호');
-
-  if (form.corpRegNumber) {
-    await fillByPlaceholder('법인등록번호', form.corpRegNumber.replace(/-/g, ''), '법인등록번호');
-  }
+  // 법인등록번호 는 자동화 대상 아님 — 수동 입력.
   if (form.bizAddress) {
     await fillByPlaceholder('나머지 주소', form.bizAddress, '사업장주소');
   }
