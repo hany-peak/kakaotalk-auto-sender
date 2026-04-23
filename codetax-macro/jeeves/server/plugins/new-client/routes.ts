@@ -9,9 +9,11 @@ import {
   updateChecklistItem,
   setAirtableRecordId,
   mergeChecklist,
+  setDropboxFolderPath,
 } from './storage';
 import { notifyNewClient } from './slack';
 import { syncToAirtable, updateAirtableChecklist, pullFromAirtable } from './airtable';
+import { createClientFolders, extractCreds } from './dropbox';
 import {
   computeProgress,
   latestChecklistUpdate,
@@ -45,7 +47,50 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
         ctx.logError(`[new-client] failed to persist airtableRecordId: ${err.message || err}`);
       }
     }
-    return res.json({ ok: true, id: record.id, slackNotified, airtableSynced });
+    let dropboxFolderCreated = false;
+    let dropboxFolderPathOut: string | undefined;
+    const dropboxCreds = extractCreds(cfg);
+    const now = () => new Date().toISOString();
+    if (!dropboxCreds) {
+      ctx.logError('[new-client] dropbox env missing, skipping folder creation');
+      await mergeChecklist(cfg.dataFile, record.id, {
+        dropboxFolder: { status: 'error', note: 'DROPBOX_* env 미설정', updatedAt: now() },
+      });
+    } else {
+      try {
+        // validated.value.entityType is guaranteed non-undefined here
+        // (validate step guarantees it); record.entityType is typed optional
+        // only to accommodate legacy records loaded from disk.
+        const out = await createClientFolders(
+          validated.value.entityType,
+          record.businessScope,
+          record.companyName,
+          dropboxCreds,
+        );
+        await setDropboxFolderPath(cfg.dataFile, record.id, out.path);
+        await mergeChecklist(cfg.dataFile, record.id, {
+          dropboxFolder: { status: 'done', updatedAt: now() },
+        });
+        dropboxFolderCreated = true;
+        dropboxFolderPathOut = out.path;
+        ctx.log(`[new-client] dropbox folder created: ${out.path}`);
+      } catch (err: any) {
+        const msg = err?.message ?? String(err);
+        ctx.logError(`[new-client] dropbox folder creation failed: ${msg}`);
+        await mergeChecklist(cfg.dataFile, record.id, {
+          dropboxFolder: { status: 'error', note: msg.slice(0, 500), updatedAt: now() },
+        });
+      }
+    }
+
+    return res.json({
+      ok: true,
+      id: record.id,
+      slackNotified,
+      airtableSynced,
+      dropboxFolderCreated,
+      dropboxFolderPath: dropboxFolderPathOut,
+    });
   });
 
   app.get('/api/new-client/list', async (_req, res) => {
