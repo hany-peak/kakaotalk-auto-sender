@@ -334,43 +334,63 @@ export async function registerWehagoClient(
   await page.waitForSelector('text=수임처 신규생성', { timeout: 10_000 });
   await page.waitForTimeout(800);
 
-  log('[wehago] filling form');
-  await page.getByPlaceholder('회사명을 입력하세요').fill(form.companyName);
+  log(`[wehago] filling form — companyName=${form.companyName}, entityType=${form.entityType}, scope=${form.scope}`);
+  log(`[wehago]   representative=${form.representative}, bizRegNumber=${form.bizRegNumber}, industry=${form.industry ?? '-'}`);
 
-  // 회사구분 — custom dropdown. Default shows 0.법인사업자; if we need 개인사업자,
-  // click the trigger text and then the option text.
-  await selectCustomDropdown(page, '0.법인사업자', form.entityType, log, '회사구분');
+  // Helper — fill by placeholder substring, best-effort (log and continue on fail).
+  const fillByPlaceholder = async (placeholderHint: string, value: string, label: string): Promise<void> => {
+    if (!value) {
+      log(`[wehago]   skip ${label} — empty value`);
+      return;
+    }
+    try {
+      const input = page.locator(`input[placeholder*="${placeholderHint}"]`).first();
+      await input.fill(value, { timeout: 3_000 });
+      log(`[wehago]   ✓ ${label} = ${value}`);
+    } catch (e: any) {
+      log(`[wehago]   ✗ ${label} 실패: ${e.message}`);
+    }
+  };
 
-  await page.getByPlaceholder('대표자명을 입력하세요').fill(form.representative);
+  await fillByPlaceholder('회사명', form.companyName, '수임처명');
 
-  // Some placeholders render truncated; use substring match on input placeholder.
-  await page.locator('input[placeholder*="사업자등록번호"]').first().fill(form.bizRegNumber).catch((e: Error) =>
-    log(`[wehago] 사업자등록번호 입력 실패: ${e.message}`),
-  );
+  // 회사구분 — change only when target differs from default.
+  try {
+    await selectCustomDropdown(page, '0.법인사업자', form.entityType, log, '회사구분');
+  } catch (e: any) {
+    log(`[wehago]   ✗ 회사구분 실패: ${e.message}`);
+  }
+
+  await fillByPlaceholder('대표자명', form.representative, '대표자명');
+  await fillByPlaceholder('사업자등록번호', form.bizRegNumber, '사업자등록번호');
 
   if (form.corpRegNumber) {
-    await page.locator('input[placeholder*="법인등록번호"]').first().fill(form.corpRegNumber).catch((e: Error) =>
-      log(`[wehago] 법인등록번호 skip: ${e.message}`),
-    );
+    await fillByPlaceholder('법인등록번호', form.corpRegNumber, '법인등록번호');
   }
   if (form.bizAddress) {
-    await page.locator('input[placeholder*="나머지 주소"]').first().fill(form.bizAddress).catch(() => {});
+    await fillByPlaceholder('나머지 주소', form.bizAddress, '사업장주소');
   }
   if (form.industry) {
-    await page.locator('input[placeholder*="업종을"]').first().fill(form.industry).catch(() => {});
+    await fillByPlaceholder('업종을', form.industry, '업종');
   }
 
-  // 서비스 제공형태 — custom dropdown. Default 0.기장.
-  await selectCustomDropdown(page, '0.기장', form.scope, log, '서비스 제공형태');
+  // 서비스 제공형태 — default 0.기장; only click when different.
+  try {
+    await selectCustomDropdown(page, '0.기장', form.scope, log, '서비스 제공형태');
+  } catch (e: any) {
+    log(`[wehago]   ✗ 서비스 제공형태 실패: ${e.message}`);
+  }
 
+  // 개업년월일 — label-proximity, best effort.
   if (form.openDate) {
-    // 개업년월일 — date picker input in 회계/급여관리 section.
-    // Find by proximity to "개업년월일" label cell.
     const openDateFormatted = form.openDate.replace(/-/g, '.');
-    const openDateInput = page.locator('text=개업년월일').locator('..').locator('input').first();
-    await openDateInput.fill(openDateFormatted).catch((e: Error) =>
-      log(`[wehago] 개업년월일 입력 실패 (${e.message}) — 수동 확인 필요`),
-    );
+    try {
+      const openDateInput = page.locator('text=개업년월일').locator('..').locator('input').first();
+      await openDateInput.fill(openDateFormatted, { timeout: 3_000 });
+      log(`[wehago]   ✓ 개업년월일 = ${openDateFormatted}`);
+    } catch (e: any) {
+      log(`[wehago]   ✗ 개업년월일 실패: ${e.message}`);
+    }
   }
 
   log('[wehago] submitting');
