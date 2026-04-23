@@ -167,7 +167,80 @@ const REVERSE_MAPPINGS: Partial<Record<ChecklistItemKey, ReverseMapping>> = {
       return partial;
     },
   },
+  // ── Checkbox fields (5) ────────────────────────────────────────────────
+  wehago: checkboxMapping('위하고'),
+  cms: checkboxMapping('CMS'),
+  cashReceiptStore: checkboxMapping('현영가맹점'),
+  wemembers: checkboxMapping('위멤버스'),
+  semoreport: checkboxMapping('세모리포트'),
+  onboardingComplete: checkboxMapping('수임완료'),
+  // ── Date value ─────────────────────────────────────────────────────────
+  feeBillingDate: {
+    toFields: (s) => ({ '수수료청구일': s.value && s.value.trim() !== '' ? s.value : null }),
+    fromFields: (f) => {
+      const v = f['수수료청구일'];
+      if (typeof v === 'string' && v.length > 0) return { value: v };
+      return null;
+    },
+  },
+  // ── singleSelect fields (perfect 1:1) ──────────────────────────────────
+  paymentMethod: singleSelectMapping('결제방식'),
+  contract: singleSelectMapping('기장계약서'),
+  hometaxDelegation: singleSelectMapping('홈택스수임'),
+  ediDelegation: singleSelectMapping('EDI수임'),
+  businessAccount: singleSelectMapping('사업용계좌'),
+  creditCard: singleSelectMapping('신용카드'),
+  // ── Edge cases ─────────────────────────────────────────────────────────
+  // Airtable stores actual ID/PW in two multilineText fields. Jeeves just
+  // tracks "completed" (both filled). Jeeves→Airtable is a no-op — the user
+  // edits those fields directly in Airtable.
+  hometaxCredentials: {
+    toFields: () => ({}),
+    fromFields: (f) => {
+      const id = f['홈택스아이디'];
+      const pw = f['홈택스패스워드'];
+      const both =
+        typeof id === 'string' && id.trim() !== '' &&
+        typeof pw === 'string' && pw.trim() !== '';
+      return { status: both ? 'done' : 'none' };
+    },
+  },
+  // multipleSelects field — we use first selected element as Jeeves status.
+  assignee: {
+    toFields: (s) => ({ '실무자': s.status && s.status !== 'none' ? [s.status] : null }),
+    fromFields: (f) => {
+      const arr = f['실무자'];
+      if (Array.isArray(arr) && typeof arr[0] === 'string') return { status: arr[0] };
+      return null;
+    },
+  },
 };
+
+/**
+ * Standard checkbox ↔ binary mapping. `done` ↔ true, anything else ↔ false/absent.
+ */
+function checkboxMapping(fieldName: string): ReverseMapping {
+  return {
+    toFields: (s) => ({ [fieldName]: s.status === 'done' }),
+    fromFields: (f) => ({ status: f[fieldName] === true ? 'done' : 'none' }),
+  };
+}
+
+/**
+ * Standard singleSelect ↔ enum mapping using Jeeves status = Airtable value.
+ * When Airtable field is empty/absent → fromFields returns null (preserve local state).
+ * When Jeeves status is 'none'/empty → toFields sends null (clear field).
+ */
+function singleSelectMapping(fieldName: string): ReverseMapping {
+  return {
+    toFields: (s) => ({ [fieldName]: selectOrNull(s.status) }),
+    fromFields: (f) => {
+      const v = f[fieldName];
+      if (typeof v === 'string' && v.length > 0) return { status: v };
+      return null;
+    },
+  };
+}
 
 /**
  * Airtable 의 기존 레코드를 체크리스트 항목에 맞춰 갱신한다.
