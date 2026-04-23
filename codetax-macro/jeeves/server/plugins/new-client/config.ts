@@ -13,6 +13,12 @@ export interface NewClientConfig {
   airtableNewClientPat: string | undefined;
   airtableNewClientBaseId: string | undefined;
   airtableNewClientTableName: string;
+  dropbox: {
+    appKey: string | undefined;
+    appSecret: string | undefined;
+    refreshToken: string | undefined;
+    teamRootNsId: string | undefined;
+  };
 }
 
 export function loadConfig(): NewClientConfig {
@@ -23,5 +29,11 @@ export function loadConfig(): NewClientConfig {
     airtableNewClientPat: process.env.AIRTABLE_NEW_CLIENT_PAT,
     airtableNewClientBaseId: process.env.AIRTABLE_NEW_CLIENT_BASE_ID,
     airtableNewClientTableName: process.env.AIRTABLE_NEW_CLIENT_TABLE_NAME || '거래처',
+    dropbox: {
+      appKey: process.env.DROPBOX_APP_KEY,
+      appSecret: process.env.DROPBOX_APP_SECRET,
+      refreshToken: process.env.DROPBOX_REFRESH_TOKEN,
+      teamRootNsId: process.env.DROPBOX_TEAM_ROOT_NS_ID,
+    },
   };
 }
