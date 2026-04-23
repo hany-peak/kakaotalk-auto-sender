@@ -62,6 +62,24 @@ export interface DropboxStatus {
   files: string[];
 }
 
+export function useWehagoRegister(clientId: string | null) {
+  const api = useApi();
+  const [pending, setPending] = useState(false);
+  const register = useCallback(async () => {
+    if (!clientId) throw new Error('no client');
+    setPending(true);
+    try {
+      return await api.post<{ ok: true; companyName: string; state: { status: string; updatedAt: string } }>(
+        `/new-client/${clientId}/wehago/register`,
+        {},
+      );
+    } finally {
+      setPending(false);
+    }
+  }, [api, clientId]);
+  return { register, pending };
+}
+
 export function useDropboxStatus(clientId: string | null) {
   const api = useApi();
   const [data, setData] = useState<DropboxStatus | null>(null);

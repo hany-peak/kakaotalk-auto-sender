@@ -81,6 +81,12 @@ export interface NewClientRecord
   industry?: Industry;
   bookkeepingFee?: number;
   adjustmentFee?: number;
+  // 추가 필드 — Airtable 에서만 존재, WEHAGO 수임처 신규생성에 사용.
+  bizRegNumber?: string;   // 사업자등록번호
+  openDate?: string;       // 개업일 (YYYY-MM-DD)
+  corpRegNumber?: string;  // 법인등록번호 (법인만)
+  bizAddress?: string;     // 사업장주소
+  bizPhone?: string;       // 사업장전화번호
 }
 
 export interface NewClientListItem {

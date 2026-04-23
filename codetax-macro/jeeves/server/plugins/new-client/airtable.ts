@@ -369,6 +369,12 @@ export function airtableToChecklist(
   return out;
 }
 
+function optionalString(v: unknown): string | undefined {
+  if (typeof v !== 'string') return undefined;
+  const trimmed = v.trim();
+  return trimmed === '' ? undefined : trimmed;
+}
+
 /** Convert an Airtable record → NewClientRecord shape. Missing fields become undefined. */
 export function airtableToRecord(
   airtableRecordId: string,
@@ -391,9 +397,14 @@ export function airtableToRecord(
     entityType: entityTypeRaw ? ENTITY_TYPE_FROM_AIRTABLE[entityTypeRaw] : undefined,
     industry,
     bookkeepingFee: firstNumber(fields['기장료']),
-    contractNote: typeof fields['계약특이사항'] === 'string' ? (fields['계약특이사항'] as string) : undefined,
-    transferSourceOffice: typeof fields['이관사무실'] === 'string' ? (fields['이관사무실'] as string) : undefined,
-    transferReason: typeof fields['이관사유'] === 'string' ? (fields['이관사유'] as string) : undefined,
+    contractNote: optionalString(fields['계약특이사항']),
+    transferSourceOffice: optionalString(fields['이관사무실']),
+    transferReason: optionalString(fields['이관사유']),
+    bizRegNumber: optionalString(fields['사업자번호']),
+    openDate: optionalString(fields['개업일']),
+    corpRegNumber: optionalString(fields['법인등록번호']),
+    bizAddress: optionalString(fields['사업장주소']),
+    bizPhone: optionalString(fields['전화번호']),
     checklist: airtableToChecklist(fields, createdAt),
   };
 }

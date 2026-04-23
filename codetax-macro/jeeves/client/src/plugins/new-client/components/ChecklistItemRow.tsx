@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { isItemDone } from '../types';
 import { KATALK_TEMPLATES } from '../katalkTemplates';
-import { useDropboxRetry, useDropboxStatus, type DropboxStatus } from '../hooks/useChecklistUpdate';
+import {
+  useDropboxRetry,
+  useDropboxStatus,
+  useWehagoRegister,
+  type DropboxStatus,
+} from '../hooks/useChecklistUpdate';
 import type {
   ChecklistItemDefinition,
   ChecklistItemState,
@@ -31,8 +36,10 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
   const [localNote, setLocalNote] = useState<string>(state?.note ?? '');
   const [err, setErr] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const isWehago = def.key === 'wehago';
   const { retry: retryDropbox, pending: dropboxRetrying } = useDropboxRetry(clientId);
   const dropboxStatus = useDropboxStatus(isDropbox ? clientId : null);
+  const { register: registerWehago, pending: wehagoRegistering } = useWehagoRegister(clientId);
 
   useEffect(() => {
     setLocalValue(state?.value ?? '');
@@ -80,6 +87,17 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
     }
   }
 
+  async function handleWehagoRegister() {
+    setErr(null);
+    try {
+      const res = await registerWehago();
+      // Optimistically update row status so user sees ✓ immediately.
+      await onUpdate({ status: res.state.status });
+    } catch (e: any) {
+      setErr(e.message ?? 'wehago register failed');
+    }
+  }
+
   return (
     <tr className={`border-b border-border ${done ? 'bg-surface2/40' : ''}`}>
       <td className="py-2 pr-3 text-xs text-muted whitespace-nowrap">
@@ -116,7 +134,9 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
               dropboxRetrying,
               handleDropboxRetry,
             )
-          : renderEditor(def, state, localValue, setLocalValue, submitStatus, submitValue)}
+          : isWehago
+            ? renderWehagoCell(state, wehagoRegistering, handleWehagoRegister)
+            : renderEditor(def, state, localValue, setLocalValue, submitStatus, submitValue)}
         {err && <div className="text-danger text-xs mt-1">{err}</div>}
       </td>
       <td className="py-2 pr-3">
@@ -132,6 +152,43 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
         {pending ? '저장 중...' : formatKst(state?.updatedAt)}
       </td>
     </tr>
+  );
+}
+
+function renderWehagoCell(
+  state: ChecklistItemState | undefined,
+  pending: boolean,
+  onRegister: () => void,
+) {
+  const status = state?.status ?? 'none';
+  if (status === 'done') {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-success">✓ 등록됨</span>
+        <button
+          type="button"
+          onClick={onRegister}
+          disabled={pending}
+          className="px-2 py-0.5 text-[11px] border border-border rounded hover:bg-surface2 disabled:opacity-50 text-muted"
+          title="다시 등록"
+        >
+          {pending ? '재등록 중...' : '재등록'}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-muted">미등록</span>
+      <button
+        type="button"
+        onClick={onRegister}
+        disabled={pending}
+        className="px-2 py-0.5 text-xs border border-border rounded hover:bg-surface2 disabled:opacity-50"
+      >
+        {pending ? '등록 중...' : '위하고 자동 등록'}
+      </button>
+    </div>
   );
 }
 

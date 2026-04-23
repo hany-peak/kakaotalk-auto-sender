@@ -20,6 +20,11 @@ export interface NewClientConfig {
     refreshToken: string | undefined;
     teamRootNsId: string | undefined;
   };
+  wehago: {
+    loginUrl: string;
+    username: string | undefined;
+    password: string | undefined;
+  };
 }
 
 export function loadConfig(): NewClientConfig {
@@ -36,6 +41,11 @@ export function loadConfig(): NewClientConfig {
       appSecret: process.env.DROPBOX_APP_SECRET,
       refreshToken: process.env.DROPBOX_REFRESH_TOKEN,
       teamRootNsId: process.env.DROPBOX_TEAM_ROOT_NS_ID,
+    },
+    wehago: {
+      loginUrl: process.env.WEHAGO_LOGIN_URL || 'https://www.wehago.com/#/main',
+      username: process.env.WEHAGO_USERNAME,
+      password: process.env.WEHAGO_PASSWORD,
     },
   };
 }

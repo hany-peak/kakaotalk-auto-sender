@@ -27,6 +27,7 @@ import {
   getFolderStatus,
   resolveParentPath,
 } from './dropbox';
+import { extractWehagoCreds, registerWehagoClient } from './wehago';
 import type { ChecklistItemKey } from './checklist-config';
 import type { NewClientRecord } from './types';
 
@@ -244,6 +245,47 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     } catch (err: any) {
       const msg = err?.message ?? String(err);
       ctx.logError(`[new-client] dropbox status failed: ${msg}`);
+      res.status(500).json({ error: msg });
+    }
+  });
+
+  app.post('/api/new-client/:id/wehago/register', async (req, res) => {
+    const cfg = loadConfig();
+    const now = () => new Date().toISOString();
+    try {
+      const record = await resolveRecord(req.params.id);
+      if (!record) return res.status(404).json({ error: 'not found' });
+
+      const creds = extractWehagoCreds(cfg);
+      if (!creds) return res.status(500).json({ error: 'WEHAGO_USERNAME/PASSWORD 미설정' });
+
+      const out = await registerWehagoClient(record, creds, ctx.log);
+
+      // Mark checklist done. For local records, persist; for Airtable records,
+      // reverse-sync the 위하고 checkbox via existing mapping.
+      const newState = { status: 'done', updatedAt: now() };
+      if (isAirtableId(req.params.id)) {
+        const ok = await updateAirtableChecklist(
+          req.params.id,
+          'wehago',
+          newState,
+          cfg,
+          ctx.logError,
+        );
+        if (!ok) ctx.logError(`[new-client] wehago airtable sync failed for ${req.params.id}`);
+      } else {
+        await mergeChecklist(cfg.dataFile, req.params.id, { wehago: newState });
+        const rec = await readOne(cfg.dataFile, req.params.id);
+        if (rec?.airtableRecordId) {
+          await updateAirtableChecklist(rec.airtableRecordId, 'wehago', newState, cfg, ctx.logError);
+        }
+      }
+
+      ctx.log(`[new-client] wehago registered: ${out.companyName}`);
+      res.json({ ok: true, companyName: out.companyName, state: newState });
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      ctx.logError(`[new-client] wehago register failed: ${msg}`);
       res.status(500).json({ error: msg });
     }
   });
