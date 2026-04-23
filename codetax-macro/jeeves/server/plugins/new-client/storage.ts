@@ -69,6 +69,18 @@ export async function setAirtableRecordId(
   await fs.promises.writeFile(file, JSON.stringify(all, null, 2), 'utf-8');
 }
 
+export async function setDropboxFolderPath(
+  file: string,
+  id: string,
+  dropboxFolderPath: string,
+): Promise<void> {
+  const all = await readAll(file);
+  const idx = all.findIndex((r) => r.id === id);
+  if (idx < 0) return;
+  all[idx].dropboxFolderPath = dropboxFolderPath;
+  await fs.promises.writeFile(file, JSON.stringify(all, null, 2), 'utf-8');
+}
+
 /**
  * 여러 체크리스트 항목을 한 번에 병합 저장한다. 업데이트된 레코드(없으면 null).
  */
