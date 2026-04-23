@@ -36,6 +36,9 @@ export type InflowRoute = '소개1' | '소개2' | '블로그';
 export type TransferStatus = '이관' | '신규';
 export type BizRegStatus = '기존' | '신규생성';
 
+export const ENTITY_TYPES = ['개인', '법인'] as const;
+export type EntityType = typeof ENTITY_TYPES[number];
+
 export const INDUSTRIES = [
   '건설업',
   '제조업',
@@ -50,6 +53,7 @@ export type Industry = typeof INDUSTRIES[number];
 export interface NewClientInput {
   companyName: string;
   businessScope: BusinessScope;
+  entityType: EntityType;
   representative: string;
   startDate: string;
   industry: Industry;
@@ -63,10 +67,12 @@ export interface NewClientInput {
   transferReason?: string;
 }
 
-export interface NewClientRecord extends NewClientInput {
+export interface NewClientRecord extends Omit<NewClientInput, 'entityType'> {
   id: string;
   createdAt: string;
   checklist: ChecklistState;
+  entityType?: EntityType;
+  dropboxFolderPath?: string;
 }
 
 export interface NewClientListItem {
@@ -103,9 +109,10 @@ export const CHECKLIST_ITEMS: ChecklistItemDefinition[] = [
     states: ['none', '자료요청', '자료저장', '전달완료'],
     doneStates: ['전달완료'],
     description: '자료요청 / 자료저장 / 전달완료 (메모는 Airtable 이관사무실)' },
-  { key: 'dropboxFolder', label: '드롭박스 생성', step: 3, kind: 'binary',
-    states: ['none', 'done'],
-    description: '드롭박스 기장 거래처 폴더 생성 (2.기장/업체명)' },
+  { key: 'dropboxFolder', label: '드롭박스 생성', step: 3, kind: 'enum',
+    states: ['none', 'done', 'error'],
+    doneStates: ['done'],
+    description: '등록 시 자동 생성 (실패 시 error + 재시도 버튼)' },
   { key: 'hometaxCredentials', label: '홈택스 ID/PW', kind: 'binary',
     states: ['none', 'done'], description: '거래처에게 전달받아 기재' },
   { key: 'wehago', label: '위하고', step: 4, kind: 'binary',
