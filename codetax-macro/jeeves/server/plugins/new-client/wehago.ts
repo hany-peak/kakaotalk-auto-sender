@@ -115,32 +115,42 @@ async function ensureBrowser(): Promise<Page> {
 async function isLoggedIn(page: Page): Promise<boolean> {
   // WEHAGO main page shows "담당 수임처" when logged in.
   try {
-    const text = await page.locator('text=담당 수임처').first().textContent({ timeout: 3000 });
-    return text !== null && text.includes('수임처');
+    const loc = page.locator('text=담당 수임처').first();
+    const count = await loc.count();
+    return count > 0;
   } catch {
     return false;
   }
+}
+
+async function pollLoggedIn(page: Page, timeoutMs: number): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (await isLoggedIn(page)) return true;
+    await page.waitForTimeout(1000);
+  }
+  return false;
 }
 
 async function login(page: Page, creds: WehagoCreds, log: (m: string) => void): Promise<void> {
   log(`[wehago] navigating to ${creds.loginUrl}`);
   await page.goto(creds.loginUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
-  if (await isLoggedIn(page)) {
+  if (await pollLoggedIn(page, 3_000)) {
     log('[wehago] already logged in (session reused)');
     return;
   }
 
-  // Login form selectors — WEHAGO uses placeholder text "아이디" / "비밀번호".
   log('[wehago] filling login form');
   await page.getByPlaceholder('아이디', { exact: false }).first().fill(creds.username, { timeout: 10_000 });
   await page.getByPlaceholder('비밀번호', { exact: false }).first().fill(creds.password);
   await page.getByRole('button', { name: /로그인/ }).first().click();
 
-  // Wait for redirect to main/dashboard.
-  await page.waitForLoadState('networkidle', { timeout: 30_000 });
-  if (!(await isLoggedIn(page))) {
-    throw new Error('로그인 실패 — ID/PW 또는 CAPTCHA 확인');
+  // SPA apps don't reliably trigger networkidle; poll for the logged-in
+  // indicator instead.
+  if (!(await pollLoggedIn(page, 45_000))) {
+    await page.screenshot({ path: '/tmp/wehago-login-fail.png' }).catch(() => {});
+    throw new Error('로그인 실패 — ID/PW/CAPTCHA 확인 (/tmp/wehago-login-fail.png 스크린샷 저장)');
   }
   log('[wehago] login successful');
 }
@@ -202,8 +212,21 @@ export async function registerWehagoClient(
   log('[wehago] submitting');
   await page.getByRole('button', { name: '수임처 생성' }).click();
 
-  // Wait for modal to close / success toast / list refresh.
-  await page.waitForLoadState('networkidle', { timeout: 30_000 });
+  // Wait for the modal to disappear as a success signal (poll up to 30s).
+  const modal = page.getByText('수임처 신규생성').first();
+  const start = Date.now();
+  let closed = false;
+  while (Date.now() - start < 30_000) {
+    if ((await modal.count()) === 0) {
+      closed = true;
+      break;
+    }
+    await page.waitForTimeout(1000);
+  }
+  if (!closed) {
+    await page.screenshot({ path: '/tmp/wehago-submit-fail.png' }).catch(() => {});
+    throw new Error('수임처 생성 후 모달이 닫히지 않음 — 입력값/검증 확인 (/tmp/wehago-submit-fail.png)');
+  }
   log(`[wehago] registration submitted for ${form.companyName}`);
 
   return { ok: true, companyName: form.companyName };
