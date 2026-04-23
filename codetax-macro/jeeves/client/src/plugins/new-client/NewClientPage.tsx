@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useApi } from '../../core/hooks/useApi';
 import { NewClientForm, type NewClientFormValues } from './components/NewClientForm';
 import { ClientListTable } from './components/ClientListTable';
@@ -24,12 +25,31 @@ interface SubmitResponse {
 
 export function NewClientPage() {
   const api = useApi();
-  const [view, setView] = useState<View>('list');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // View/selection state is reflected in URL query params so page refresh
+  // preserves the current view:
+  //   (none)                → list
+  //   ?mode=register        → register form
+  //   ?id=<recordId>        → detail
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get('id');
+  const mode = searchParams.get('mode');
+  const view: View = mode === 'register' ? 'register' : selectedId ? 'detail' : 'list';
+
   const [toast, setToast] = useState<Toast>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { list, loading: listLoading, error: listError, reload: reloadList } = useClientList();
+
+  function goList() {
+    setSearchParams({});
+  }
+  function goRegister() {
+    setSearchParams({ mode: 'register' });
+    setToast(null);
+  }
+  function goDetail(id: string) {
+    setSearchParams({ id });
+  }
 
   async function handleRegister(values: NewClientFormValues) {
     setSubmitting(true);
@@ -47,7 +67,7 @@ export function NewClientPage() {
           : '등록 완료 — Slack 알림 실패 (서버 로그 확인)',
       });
       await reloadList();
-      setView('list');
+      goList();
     } catch (e: any) {
       setToast({ kind: 'error', message: e?.message || '등록 실패' });
       throw e;
@@ -58,11 +78,7 @@ export function NewClientPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-4">
-      <Header
-        view={view}
-        onBack={() => { setView('list'); setSelectedId(null); }}
-        onRegister={() => { setView('register'); setToast(null); }}
-      />
+      <Header view={view} onBack={goList} onRegister={goRegister} />
 
       {toast && (
         <div
@@ -85,10 +101,7 @@ export function NewClientPage() {
           {listLoading ? (
             <div className="text-muted">로딩 중...</div>
           ) : (
-            <ClientListTable
-              items={list}
-              onSelect={(id) => { setSelectedId(id); setView('detail'); }}
-            />
+            <ClientListTable items={list} onSelect={goDetail} />
           )}
         </>
       )}
