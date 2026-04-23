@@ -346,23 +346,27 @@ export async function registerWehagoClient(
   log(`[wehago]   representative=${form.representative}, bizRegNumber=${form.bizRegNumber}, industry=${form.industry ?? '-'}`);
 
   // Helper — fill by placeholder substring, best-effort (log and continue on fail).
+  // WEHAGO pre-renders hidden template inputs with the same placeholder as the
+  // visible form, so `.first()` often lands on the hidden one. We filter to
+  // :visible to hit the actual form input.
   const fillByPlaceholder = async (placeholderHint: string, value: string, label: string): Promise<void> => {
     if (!value) {
       log(`[wehago]   skip ${label} — empty value`);
       return;
     }
     try {
-      const locator = page.locator(`input[placeholder*="${placeholderHint}"]`);
+      const locator = page.locator(`input[placeholder*="${placeholderHint}"]:visible`);
       const count = await locator.count();
       if (count === 0) {
-        log(`[wehago]   ✗ ${label}: no input matching placeholder~"${placeholderHint}"`);
+        // Fallback: some inputs may not be caught by :visible (e.g. offscreen).
+        const anyCount = await page.locator(`input[placeholder*="${placeholderHint}"]`).count();
+        log(`[wehago]   ✗ ${label}: no VISIBLE input matching "${placeholderHint}" (total in DOM: ${anyCount})`);
         return;
       }
       const input = locator.first();
-      // Click to focus first (bypasses some overlay intercept issues), then fill.
       await input.click({ force: true, timeout: 2_000 }).catch(() => {});
       await input.fill(value, { timeout: 3_000 });
-      log(`[wehago]   ✓ ${label} = ${value} (match=${count})`);
+      log(`[wehago]   ✓ ${label} = ${value} (visible match=${count})`);
     } catch (e: any) {
       log(`[wehago]   ✗ ${label} 실패: ${e.message}`);
     }
