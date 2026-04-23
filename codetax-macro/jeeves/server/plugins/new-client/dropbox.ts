@@ -170,10 +170,15 @@ export async function createClientFolders(
   const clientPath = `${parent}/${folderName}`;
   const basePath = `${clientPath}/1. 기초자료`;
 
-  await dbxApi<unknown>('/2/files/create_folder_batch_v2', creds, {
-    paths: [clientPath, basePath],
+  // Two sequential create_folder_v2 calls — parent must exist before child.
+  // (Dropbox HTTP API has no create_folder_batch_v2 endpoint.)
+  await dbxApi<unknown>('/2/files/create_folder_v2', creds, {
+    path: clientPath,
     autorename: false,
-    force_async: false,
+  });
+  await dbxApi<unknown>('/2/files/create_folder_v2', creds, {
+    path: basePath,
+    autorename: false,
   });
 
   return { path: clientPath };
