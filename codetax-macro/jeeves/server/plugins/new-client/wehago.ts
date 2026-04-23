@@ -221,50 +221,49 @@ const SUPPRESS_CHECKBOX_LABELS = [
  */
 async function dismissPopups(page: Page, log: (m: string) => void): Promise<void> {
   const start = Date.now();
+  const combinedClose = POPUP_CLOSE_SELECTORS.join(', ');
   let totalDismissed = 0;
 
-  for (let round = 0; round < 25; round++) {
-    if (Date.now() - start > 30_000) break;
+  // One-shot pass on "don't show again" labels — ticks checkboxes so these
+  // popups won't reappear next session. No retry loop here (the main loop
+  // handles closing what's visible now).
+  for (const label of SUPPRESS_CHECKBOX_LABELS) {
+    const loc = page.getByText(label, { exact: true }).first();
+    if (await loc.isVisible().catch(() => false)) {
+      await loc.click({ timeout: 500 }).catch(() => {});
+    }
+  }
+
+  for (let round = 0; round < 10; round++) {
+    if (Date.now() - start > 10_000) break;
+
+    // Hide any commonDlg overlays at the TOP of each round so subsequent
+    // clicks aren't intercepted.
+    await forceHideCommonDialogs(page, log);
+
     let clickedThisRound = 0;
 
-    // 1) Tick "don't show again" checkboxes first so they won't come back.
-    for (const label of SUPPRESS_CHECKBOX_LABELS) {
-      const textLoc = page.getByText(label, { exact: false });
-      const count = await textLoc.count().catch(() => 0);
-      for (let i = 0; i < count; i++) {
-        const item = textLoc.nth(i);
-        if (!(await item.isVisible().catch(() => false))) continue;
-        // Find the associated checkbox: label is a span/label near a checkbox
-        // input. Try clicking the label itself first (most label→input pairs
-        // react to label click).
-        await item.click({ timeout: 1500 }).catch(() => {});
-        await page.waitForTimeout(200);
-      }
+    // Single-pass scan across all close selectors via one locator query,
+    // then click each visible one with an aggressive timeout.
+    const els = await page.locator(combinedClose).all().catch(() => []);
+    for (const el of els) {
+      const visible = await el.isVisible().catch(() => false);
+      if (!visible) continue;
+      await el.click({ timeout: 500, force: false }).catch(() => {});
+      clickedThisRound++;
+      totalDismissed++;
     }
 
-    // 2) Click X close controls.
-    for (const sel of POPUP_CLOSE_SELECTORS) {
-      const els = await page.locator(sel).all().catch(() => []);
-      for (const el of els) {
-        if (await el.isVisible().catch(() => false)) {
-          await el.click({ timeout: 2000 }).catch(() => {});
-          clickedThisRound++;
-          totalDismissed++;
-          await page.waitForTimeout(400);
-        }
-      }
-    }
-
-    // 3) As a fallback, Escape often dismisses modals.
+    // Escape once per round — cheap and often closes modals without a
+    // recognizable close button.
     await page.keyboard.press('Escape').catch(() => {});
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(250);
 
     if (clickedThisRound === 0) break; // stable
   }
-  if (totalDismissed > 0) log(`[wehago] dismissed ${totalDismissed} popup(s)`);
+  if (totalDismissed > 0) log(`[wehago] dismissed ${totalDismissed} popup(s) in ${Date.now() - start}ms`);
 
-  // If any commonDlg* overlay remains (stubborn ones without recognizable
-  // close buttons), just hide it via JS so it doesn't intercept clicks.
+  // Final sweep in case anything re-appeared after last check.
   await forceHideCommonDialogs(page, log);
 }
 
