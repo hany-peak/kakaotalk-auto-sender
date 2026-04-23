@@ -187,24 +187,24 @@ const POPUP_CLOSE_SELECTORS = [
   '[class*="commonDlg"] [class*="btn_x"]',
 ];
 
-// WEHAGO commonDlg* overlays (프로모션, 공지, etc.) intercept pointer events
-// on underlying UI. If we can't close them via buttons, hide them AND disable
-// their click-capture so the form/modal below is clickable.
-// NOTE: the 수임처 생성 방식 modal + 수임처 신규생성 modal may also use these
-// classes. Use this ONLY before navigation clicks, not during form fill.
+// WEHAGO pre-renders 수임처 생성 방식 + 수임처 신규생성 modals as hidden DOM
+// with commonDlg* classes. If we blindly set display:none inline, these
+// modals can never open (inline style overrides class-based toggle). Hide
+// only what's currently rendered-visible.
 async function forceHideCommonDialogs(page: Page, log: (m: string) => void): Promise<void> {
   const hidden = await page.evaluate(() => {
     const selectors = '[class*="commonDlg"], [class*="dialog_data_area"]';
     let count = 0;
     document.querySelectorAll(selectors).forEach((el) => {
-      const style = (el as HTMLElement).style;
-      style.display = 'none';
-      style.pointerEvents = 'none';
+      const h = el as HTMLElement;
+      if (h.offsetWidth === 0 && h.offsetHeight === 0) return; // not visible now
+      h.style.display = 'none';
+      h.style.pointerEvents = 'none';
       count++;
     });
     return count;
   }).catch(() => 0);
-  if (hidden > 0) log(`[wehago] force-hid ${hidden} commonDlg overlay(s)`);
+  if (hidden > 0) log(`[wehago] force-hid ${hidden} visible commonDlg overlay(s)`);
 }
 
 // Labels for "don't show again" checkboxes — click to suppress on next login.
