@@ -1,4 +1,9 @@
 import * as XLSX from 'xlsx';
+import { spawn } from 'node:child_process';
+import { mkdtemp, writeFile, readFile, rm, access } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import * as path from 'node:path';
+import JSZip from 'jszip';
 
 export interface BundleGroup {
   id: 'contract' | 'cms' | 'consent' | 'edi';
@@ -45,4 +50,70 @@ export function splitForBundle(wb: XLSX.WorkBook, group: BundleGroup): XLSX.Work
 
 export function sanitizeFilename(s: string): string {
   return s.replace(/\s+/g, '_').replace(/[\/\\:*?"<>|]/g, '');
+}
+
+const MAC_SOFFICE = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+
+export async function resolveSofficePath(): Promise<string> {
+  const env = process.env.NEW_CLIENT_SOFFICE_PATH;
+  if (env && env.trim() !== '') return env;
+  try {
+    await access(MAC_SOFFICE);
+    return MAC_SOFFICE;
+  } catch {
+    return 'soffice';
+  }
+}
+
+/**
+ * workbook을 임시 xlsx로 저장한 뒤 soffice 로 PDF 변환 → PDF Buffer 반환.
+ * 실패/timeout/미설치 시 throw.
+ */
+export async function renderPdf(
+  wb: XLSX.WorkBook,
+  baseName: string,
+  timeoutMs = 60_000,
+): Promise<Buffer> {
+  const dir = await mkdtemp(path.join(tmpdir(), 'jeeves-contract-'));
+  try {
+    const xlsxPath = path.join(dir, `${baseName}.xlsx`);
+    const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', cellStyles: true }) as Buffer;
+    await writeFile(xlsxPath, xlsxBuf);
+
+    const sofficePath = await resolveSofficePath();
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(
+        sofficePath,
+        ['--headless', '--convert-to', 'pdf', '--outdir', dir, xlsxPath],
+        { stdio: ['ignore', 'pipe', 'pipe'] },
+      );
+      let stderr = '';
+      proc.stderr.on('data', (d) => { stderr += d.toString(); });
+      const timer = setTimeout(() => {
+        proc.kill('SIGKILL');
+        reject(new Error(`soffice timeout after ${timeoutMs}ms`));
+      }, timeoutMs);
+      proc.on('error', (err) => {
+        clearTimeout(timer);
+        reject(new Error(`soffice spawn failed: ${err.message} (경로: ${sofficePath})`));
+      });
+      proc.on('exit', (code) => {
+        clearTimeout(timer);
+        if (code === 0) resolve();
+        else reject(new Error(`soffice exit ${code}: ${stderr.slice(0, 500)}`));
+      });
+    });
+
+    const pdfPath = path.join(dir, `${baseName}.pdf`);
+    return await readFile(pdfPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+export async function zipFiles(files: Array<{ name: string; data: Buffer }>): Promise<Buffer> {
+  const zip = new JSZip();
+  for (const f of files) zip.file(f.name, f.data);
+  return await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
