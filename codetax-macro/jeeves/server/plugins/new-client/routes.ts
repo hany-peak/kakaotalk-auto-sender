@@ -18,8 +18,13 @@ import {
   pullFromAirtable,
   fetchViewList,
   fetchAirtableRecord,
+  fetchRepRrn,
   isAirtableId,
+  updateAirtableAuxFields,
 } from './airtable';
+import { buildInputSheetValues, missingRequired, fillXlsx } from './contract';
+import { BUNDLE_GROUPS, splitForBundle, renderPdf, sanitizeFilename, zipFiles } from './contract-pdf';
+import * as XLSX from 'xlsx';
 import {
   createClientFolders,
   extractCreds,
@@ -253,13 +258,29 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     const cfg = loadConfig();
     const now = () => new Date().toISOString();
     try {
-      const record = await resolveRecord(req.params.id);
-      if (!record) return res.status(404).json({ error: 'not found' });
+      const base = await resolveRecord(req.params.id);
+      if (!base) return res.status(404).json({ error: 'not found' });
 
       const creds = extractWehagoCreds(cfg);
       if (!creds) return res.status(500).json({ error: 'WEHAGO_USERNAME/PASSWORD 미설정' });
 
-      const out = await registerWehagoClient(record, creds, ctx.log);
+      // 프론트에서 수동 입력한 개업연월일이 있으면 override (Airtable 개업일 우선순위보다 높음).
+      const bodyOpenDate = typeof req.body?.openDate === 'string' ? req.body.openDate.trim() : '';
+      if (bodyOpenDate !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(bodyOpenDate)) {
+        return res.status(400).json({ error: 'invalid openDate (expected YYYY-MM-DD)' });
+      }
+      const record = bodyOpenDate !== '' ? { ...base, openDate: bodyOpenDate } : base;
+      ctx.log(`[new-client] wehago register: id=${req.params.id} openDate=${record.openDate ?? '(none)'} (body=${bodyOpenDate || '-'}, base=${base.openDate ?? '-'})`);
+
+      // 대표자 주민번호는 민감정보 — NewClientRecord 에 싣지 않고 여기서만 별도
+      // fetch. 값은 registerWehagoClient 내부에서 WEHAGO 입력에만 사용되고,
+      // 클라이언트로 전달되는 응답에는 포함되지 않는다.
+      const airtableId = isAirtableId(req.params.id)
+        ? req.params.id
+        : base.airtableRecordId ?? null;
+      const repRrn = airtableId ? await fetchRepRrn(airtableId, cfg, ctx.logError, ctx.log) : null;
+
+      const out = await registerWehagoClient(record, creds, ctx.log, { repRrn });
 
       // Mark checklist done. For local records, persist; for Airtable records,
       // reverse-sync the 위하고 checkbox via existing mapping.
@@ -339,6 +360,81 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
         });
       }
       res.status(500).json({ error: msg });
+    }
+  });
+
+  app.patch('/api/new-client/:id/aux', async (req, res) => {
+    const id = req.params.id;
+    if (!isAirtableId(id)) {
+      return res.status(400).json({ error: 'invalid airtable id' });
+    }
+    const body = req.body ?? {};
+    const patch: { openDate?: string; bankName?: string; accountNumber?: string } = {};
+    if (typeof body.openDate === 'string') patch.openDate = body.openDate;
+    if (typeof body.bankName === 'string') patch.bankName = body.bankName;
+    if (typeof body.accountNumber === 'string') patch.accountNumber = body.accountNumber;
+
+    const cfg = loadConfig();
+    const ok = await updateAirtableAuxFields(id, patch, cfg, ctx.logError);
+    if (!ok) return res.status(502).json({ error: 'airtable update failed' });
+
+    const record = await fetchAirtableRecord(id, cfg, ctx.logError);
+    if (!record) return res.status(500).json({ error: 'fetch after update failed' });
+    return res.json({ record });
+  });
+
+  app.get('/api/new-client/:id/contract-download', async (req, res) => {
+    const id = req.params.id;
+    if (!isAirtableId(id)) return res.status(400).json({ error: 'invalid airtable id' });
+    const format = req.query.format === 'pdf-zip' ? 'pdf-zip' : 'xlsx';
+
+    const cfg = loadConfig();
+    const record = await fetchAirtableRecord(id, cfg, ctx.logError);
+    if (!record) return res.status(404).json({ error: 'record not found' });
+    const rrn = await fetchRepRrn(id, cfg, ctx.logError, ctx.log);
+
+    const missing = missingRequired(record, rrn);
+    if (missing.length > 0) return res.status(400).json({ missing });
+
+    const values = buildInputSheetValues(record, rrn);
+    const xlsxBuf = await fillXlsx(values);
+    const companyTag = sanitizeFilename(record.companyName || 'client');
+
+    if (format === 'xlsx') {
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${companyTag}_기장계약서세트.xlsx"`,
+      );
+      return res.send(xlsxBuf);
+    }
+
+    try {
+      const wb = XLSX.read(xlsxBuf, { type: 'buffer', cellStyles: true });
+      const pdfFiles: Array<{ name: string; data: Buffer }> = [];
+      for (const group of BUNDLE_GROUPS) {
+        const groupWb = splitForBundle(wb, group);
+        const pdf = await renderPdf(groupWb, sanitizeFilename(`${companyTag}_${group.filename}`));
+        pdfFiles.push({ name: `${companyTag}_${group.filename}.pdf`, data: pdf });
+      }
+      const zipBuf = await zipFiles(pdfFiles);
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${companyTag}_기장계약서묶음.zip"`,
+      );
+      return res.send(zipBuf);
+    } catch (err: any) {
+      ctx.logError(`[new-client] contract-download pdf-zip failed: ${err.message || err}`);
+      const msg = /spawn failed|ENOENT/i.test(err.message ?? '')
+        ? 'LibreOffice 미설치 — PDF 변환 불가. xlsx로 다운로드하세요.'
+        : /timeout/i.test(err.message ?? '')
+          ? 'PDF 변환 시간 초과'
+          : 'PDF 생성 실패';
+      return res.status(500).json({ error: msg });
     }
   });
 }
