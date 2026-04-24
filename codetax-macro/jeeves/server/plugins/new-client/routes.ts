@@ -25,6 +25,16 @@ import {
 import { buildInputSheetValues, missingRequired, fillXlsx } from './contract';
 import { BUNDLE_GROUPS, splitForBundle, renderPdf, sanitizeFilename } from './contract-pdf';
 import * as XLSX from 'xlsx';
+
+/**
+ * RFC 5987 기반 Content-Disposition. 한글 포함 파일명을 안전하게 전달.
+ * 브라우저는 filename* 우선, 오래된 클라이언트는 filename(ASCII fallback) 사용.
+ */
+function contentDisposition(filename: string): string {
+  const asciiFallback = filename.replace(/[^\x20-\x7E]/g, '_');
+  const encoded = encodeURIComponent(filename);
+  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+}
 import {
   createClientFolders,
   extractCreds,
@@ -478,10 +488,7 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${baseName}.xlsx"`,
-      );
+      res.setHeader('Content-Disposition', contentDisposition(`${baseName}.xlsx`));
       return res.send(outBuf);
     }
 
@@ -491,7 +498,7 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       const groupWb = splitForBundle(fullWb, group!);
       const pdf = await renderPdf(groupWb, sanitizeFilename(baseName));
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${baseName}.pdf"`);
+      res.setHeader('Content-Disposition', contentDisposition(`${baseName}.pdf`));
       return res.send(pdf);
     } catch (err: any) {
       ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
