@@ -13,7 +13,6 @@ import type {
   ChecklistUpdateInput,
   NewClientRecord,
 } from '../types';
-import { ContractDownloadButtons } from './ContractDownloadButtons';
 
 interface Props {
   def: ChecklistItemDefinition;
@@ -109,7 +108,6 @@ export function ChecklistItemRow({ def, state, pending, clientId, record, onUpda
       <td className="py-2 pr-3 font-medium whitespace-nowrap">{def.label}</td>
       <td className="py-2 pr-3 text-xs text-muted">
         <div>{def.description ?? ''}</div>
-        {def.key === 'contract' && <ContractDownloadButtons record={record} />}
         {def.key === 'katalkRoom' && (
           <div className="flex gap-1 mt-1 flex-wrap">
             {KATALK_TEMPLATES.map((t, i) => (

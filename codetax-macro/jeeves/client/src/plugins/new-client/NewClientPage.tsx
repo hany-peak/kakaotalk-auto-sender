@@ -5,6 +5,7 @@ import { NewClientForm, type NewClientFormValues } from './components/NewClientF
 import { ClientListTable } from './components/ClientListTable';
 import { ChecklistTable } from './components/ChecklistTable';
 import { AuxInputsPanel } from './components/AuxInputsPanel';
+import { DocumentDownloadPanel } from './components/DocumentDownloadPanel';
 import { ProgressPill } from './components/ProgressPill';
 import { useClientList, useClientDetail } from './hooks/useNewClients';
 import { useChecklistUpdate } from './hooks/useChecklistUpdate';
@@ -206,6 +207,8 @@ function DetailView({
         record={record}
         onRecordRefresh={(r) => setRecord(r)}
       />
+
+      <DocumentDownloadPanel record={record} />
 
       <div>
         <h3 className="text-sm font-medium mb-2 text-muted">체크리스트</h3>

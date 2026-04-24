@@ -23,7 +23,7 @@ import {
   updateAirtableAuxFields,
 } from './airtable';
 import { buildInputSheetValues, missingRequired, fillXlsx } from './contract';
-import { BUNDLE_GROUPS, splitForBundle, renderPdf, sanitizeFilename, zipFiles } from './contract-pdf';
+import { BUNDLE_GROUPS, splitForBundle, renderPdf, sanitizeFilename } from './contract-pdf';
 import * as XLSX from 'xlsx';
 import {
   createClientFolders,
@@ -386,7 +386,15 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
   app.get('/api/new-client/:id/contract-download', async (req, res) => {
     const id = req.params.id;
     if (!isAirtableId(id)) return res.status(400).json({ error: 'invalid airtable id' });
-    const format = req.query.format === 'pdf-zip' ? 'pdf-zip' : 'xlsx';
+    const format = req.query.format === 'pdf' ? 'pdf' : 'xlsx';
+    const groupId = typeof req.query.group === 'string' ? req.query.group : 'all';
+    const group = groupId === 'all' ? null : BUNDLE_GROUPS.find((g) => g.id === groupId);
+    if (groupId !== 'all' && !group) {
+      return res.status(400).json({ error: `invalid group: ${groupId}` });
+    }
+    if (format === 'pdf' && !group) {
+      return res.status(400).json({ error: 'pdf 포맷은 group 파라미터 필수' });
+    }
 
     const cfg = loadConfig();
     const record = await fetchAirtableRecord(id, cfg, ctx.logError);
@@ -399,38 +407,38 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     const values = buildInputSheetValues(record, rrn);
     const xlsxBuf = await fillXlsx(values);
     const companyTag = sanitizeFilename(record.companyName || 'client');
+    const baseName = group ? `${companyTag}_${group.filename}` : `${companyTag}_기장계약서세트`;
 
     if (format === 'xlsx') {
+      let outBuf = xlsxBuf;
+      if (group) {
+        const fullWb = XLSX.read(xlsxBuf, { type: 'buffer', cellStyles: true });
+        const groupWb = splitForBundle(fullWb, group);
+        outBuf = XLSX.write(groupWb, { type: 'buffer', bookType: 'xlsx', cellStyles: true }) as Buffer;
+      }
       res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="${companyTag}_기장계약서세트.xlsx"`,
+        `attachment; filename="${baseName}.xlsx"`,
       );
-      return res.send(xlsxBuf);
+      return res.send(outBuf);
     }
 
+    // format === 'pdf' (group is guaranteed non-null by check above)
     try {
-      const wb = XLSX.read(xlsxBuf, { type: 'buffer', cellStyles: true });
-      const pdfFiles: Array<{ name: string; data: Buffer }> = [];
-      for (const group of BUNDLE_GROUPS) {
-        const groupWb = splitForBundle(wb, group);
-        const pdf = await renderPdf(groupWb, sanitizeFilename(`${companyTag}_${group.filename}`));
-        pdfFiles.push({ name: `${companyTag}_${group.filename}.pdf`, data: pdf });
-      }
-      const zipBuf = await zipFiles(pdfFiles);
-      res.setHeader('Content-Type', 'application/zip');
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${companyTag}_기장계약서묶음.zip"`,
-      );
-      return res.send(zipBuf);
+      const fullWb = XLSX.read(xlsxBuf, { type: 'buffer', cellStyles: true });
+      const groupWb = splitForBundle(fullWb, group!);
+      const pdf = await renderPdf(groupWb, sanitizeFilename(baseName));
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${baseName}.pdf"`);
+      return res.send(pdf);
     } catch (err: any) {
-      ctx.logError(`[new-client] contract-download pdf-zip failed: ${err.message || err}`);
+      ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
       const msg = /spawn failed|ENOENT/i.test(err.message ?? '')
-        ? 'LibreOffice 미설치 — PDF 변환 불가. xlsx로 다운로드하세요.'
+        ? 'LibreOffice 미설치 — PDF 변환 불가.'
         : /timeout/i.test(err.message ?? '')
           ? 'PDF 변환 시간 초과'
           : 'PDF 생성 실패';
