@@ -87,6 +87,8 @@ export interface NewClientRecord
   corpRegNumber?: string;  // 법인등록번호 (법인만)
   bizAddress?: string;     // 사업장주소
   bizPhone?: string;       // 사업장전화번호
+  bankName?: string;       // 은행명 (기장계약서/CMS용)
+  accountNumber?: string;  // 계좌번호 (기장계약서/CMS용)
 }
 
 export interface NewClientListItem {
