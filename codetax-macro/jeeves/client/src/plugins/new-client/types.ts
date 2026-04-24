@@ -86,12 +86,19 @@ export interface NewClientRecord
   checklist: ChecklistState;
   entityType?: EntityType;
   dropboxFolderPath?: string;
+  openDate?: string;
   inflowRoute?: InflowRoute;
   transferStatus?: TransferStatus;
   bizRegStatus?: BizRegStatus;
   industry?: Industry;
   bookkeepingFee?: number;
   adjustmentFee?: number;
+  bizRegNumber?: string;
+  corpRegNumber?: string;
+  bizAddress?: string;
+  bizPhone?: string;
+  bankName?: string;
+  accountNumber?: string;
 }
 
 export interface NewClientListItem {
