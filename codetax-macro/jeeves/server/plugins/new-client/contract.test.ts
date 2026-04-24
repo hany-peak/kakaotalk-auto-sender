@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildInputSheetValues, missingRequired } from './contract';
+import * as XLSX from 'xlsx';
+import { buildInputSheetValues, missingRequired, fillXlsx } from './contract';
 import type { NewClientRecord } from './types';
 
 const baseIndividual: NewClientRecord = {
@@ -73,4 +74,16 @@ test('missingRequired: 법인 + 법인등록번호 누락', () => {
 
 test('missingRequired: 주민번호 null 누락', () => {
   assert.ok(missingRequired(baseIndividual, null).includes('대표자주민번호'));
+});
+
+test('fillXlsx: 주입된 xlsx의 입력시트에 값이 설정됨', async () => {
+  const values = buildInputSheetValues(baseIndividual, '900101-1234567');
+  const buf = await fillXlsx(values);
+  assert.ok(buf.length > 10000, 'xlsx buffer should be non-trivial size');
+  const wb = XLSX.read(buf, { type: 'buffer' });
+  const ws = wb.Sheets['입력시트'];
+  assert.equal(ws['C3']?.v, '홍길동');
+  assert.equal(ws['C7']?.v, '홍길동상점');
+  assert.equal(ws['C13']?.v, 100000);
+  assert.equal(ws['C8']?.v, '1234567890');
 });
