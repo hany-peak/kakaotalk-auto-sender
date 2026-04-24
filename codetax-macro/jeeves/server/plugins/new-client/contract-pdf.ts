@@ -50,10 +50,14 @@ export function sanitizeFilename(s: string): string {
   return s.replace(/\s+/g, '_').replace(/[\/\\:*?"<>|]/g, '');
 }
 
-let driveClientCache: drive_v3.Drive | null = null;
+interface DriveContext {
+  drive: drive_v3.Drive;
+  oauth2: InstanceType<typeof google.auth.OAuth2>;
+}
+let driveContextCache: DriveContext | null = null;
 
-function getDriveClient(): drive_v3.Drive {
-  if (driveClientCache) return driveClientCache;
+function getDriveContext(): DriveContext {
+  if (driveContextCache) return driveContextCache;
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
@@ -65,21 +69,56 @@ function getDriveClient(): drive_v3.Drive {
   }
   const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
   oauth2.setCredentials({ refresh_token: refreshToken });
-  driveClientCache = google.drive({ version: 'v3', auth: oauth2 });
-  return driveClientCache;
+  const drive = google.drive({ version: 'v3', auth: oauth2 });
+  driveContextCache = { drive, oauth2 };
+  return driveContextCache;
+}
+
+/**
+ * Google Sheets PDF export URL 파라미터. 템플릿의 레이아웃을 최대한 보존.
+ * 참조: https://developers.google.com/sheets/api/samples/sheetdata (undocumented but stable)
+ *   format=pdf         PDF 출력
+ *   size=A4            A4 용지 (0=Letter, 1=Tabloid, 2=Legal, ..., 7=A4)
+ *   portrait=true      세로
+ *   fitw=true          너비 맞추기 (내용이 잘리지 않게)
+ *   gridlines=false    격자 숨김
+ *   printtitle=false   스프레드시트 이름 상단 출력 안 함
+ *   sheetnames=false   시트 이름 출력 안 함
+ *   pagenumbers=false  페이지 번호 안 찍음
+ *   fzr=false          고정 행 반복 안 함
+ *   top_margin/bottom_margin/left_margin/right_margin = 0.5 (인치)
+ *   horizontal_alignment=CENTER  가로 가운데 정렬
+ */
+function buildExportUrl(fileId: string): string {
+  const params = new URLSearchParams({
+    format: 'pdf',
+    size: 'A4',
+    portrait: 'true',
+    fitw: 'true',
+    gridlines: 'false',
+    printtitle: 'false',
+    sheetnames: 'false',
+    pagenumbers: 'false',
+    fzr: 'false',
+    top_margin: '0.5',
+    bottom_margin: '0.5',
+    left_margin: '0.5',
+    right_margin: '0.5',
+    horizontal_alignment: 'CENTER',
+  });
+  return `https://docs.google.com/spreadsheets/d/${fileId}/export?${params}`;
 }
 
 /**
  * workbook을 Google Drive에 Google Sheet로 업로드 → PDF export → 파일 삭제.
- * 수식 재계산/렌더링은 Google Sheets가 처리하므로 LibreOffice 불필요.
- * 실패 시 throw. 업로드 성공 후 export 실패해도 정리는 best-effort로 수행.
+ * Sheets export URL에 레이아웃 파라미터를 명시해 템플릿 디자인을 보존.
  */
 export async function renderPdf(
   wb: XLSX.WorkBook,
   baseName: string,
 ): Promise<Buffer> {
   const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', cellStyles: true }) as Buffer;
-  const drive = getDriveClient();
+  const { drive, oauth2 } = getDriveContext();
 
   const created = await drive.files.create({
     requestBody: {
@@ -96,11 +135,18 @@ export async function renderPdf(
   if (!fileId) throw new Error('Drive 업로드 응답에 파일 id 없음');
 
   try {
-    const pdfRes = await drive.files.export(
-      { fileId, mimeType: 'application/pdf' },
-      { responseType: 'arraybuffer' },
-    );
-    return Buffer.from(pdfRes.data as ArrayBuffer);
+    const tokenResp = await oauth2.getAccessToken();
+    const accessToken = tokenResp.token;
+    if (!accessToken) throw new Error('access token 획득 실패');
+    const res = await fetch(buildExportUrl(fileId), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Sheets export 실패 ${res.status}: ${body.slice(0, 300)}`);
+    }
+    const ab = await res.arrayBuffer();
+    return Buffer.from(ab);
   } finally {
     drive.files.delete({ fileId }).catch(() => {
       // best-effort cleanup; drive.file scope keeps blast radius minimal
