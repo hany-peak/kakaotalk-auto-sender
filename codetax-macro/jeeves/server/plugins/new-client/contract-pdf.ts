@@ -89,6 +89,12 @@ function getDriveContext(): DriveContext {
  *   top_margin/bottom_margin/left_margin/right_margin = 0.5 (인치)
  *   horizontal_alignment=CENTER  가로 가운데 정렬
  */
+/**
+ * 템플릿 sheet.xlsx 각 시트의 pageSetup(A4, portrait, 여백 0.25/0.75,
+ * 시트별 67~97% 스케일)을 가능한 한 보존. Google Sheets export URL 이
+ * 시트별 스케일까지 직접 지정하진 못하지만, fit-to-width(=자동 축소) 로
+ * 넘기면 각 시트가 자기 폭에 맞춰 축소되어 원본과 거의 같아진다.
+ */
 function buildExportUrl(fileId: string): string {
   const params = new URLSearchParams({
     format: 'pdf',
@@ -100,11 +106,10 @@ function buildExportUrl(fileId: string): string {
     sheetnames: 'false',
     pagenumbers: 'false',
     fzr: 'false',
-    top_margin: '0.5',
-    bottom_margin: '0.5',
-    left_margin: '0.5',
-    right_margin: '0.5',
-    horizontal_alignment: 'CENTER',
+    top_margin: '0.75',
+    bottom_margin: '0.75',
+    left_margin: '0.25',
+    right_margin: '0.25',
   });
   return `https://docs.google.com/spreadsheets/d/${fileId}/export?${params}`;
 }
