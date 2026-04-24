@@ -54,21 +54,18 @@ let driveClientCache: drive_v3.Drive | null = null;
 
 function getDriveClient(): drive_v3.Drive {
   if (driveClientCache) return driveClientCache;
-  const raw = process.env.GOOGLE_SA_KEY;
-  if (!raw || raw.trim() === '') {
-    throw new Error('GOOGLE_SA_KEY 환경변수 없음 — 서비스 계정 JSON 전체를 한 줄로 넣어주세요.');
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      'Google OAuth env 미설정 — GOOGLE_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN 필요. ' +
+        'scripts/reauth-google.mjs 실행으로 얻을 수 있습니다.',
+    );
   }
-  let credentials: Record<string, unknown>;
-  try {
-    credentials = JSON.parse(raw);
-  } catch (e: any) {
-    throw new Error(`GOOGLE_SA_KEY JSON 파싱 실패: ${e.message}`);
-  }
-  const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-  driveClientCache = google.drive({ version: 'v3', auth });
+  const oauth2 = new google.auth.OAuth2(clientId, clientSecret);
+  oauth2.setCredentials({ refresh_token: refreshToken });
+  driveClientCache = google.drive({ version: 'v3', auth: oauth2 });
   return driveClientCache;
 }
 

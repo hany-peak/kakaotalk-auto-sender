@@ -503,10 +503,10 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     } catch (err: any) {
       ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
       const raw = String(err.message ?? err);
-      const msg = /GOOGLE_SA_KEY/.test(raw)
+      const msg = /GOOGLE_OAUTH/.test(raw)
         ? raw
         : /invalid_grant|unauthorized|permission/i.test(raw)
-          ? 'Google Drive 인증 실패 — 서비스 계정 키 확인 필요.'
+          ? 'Google Drive 인증 실패 — scripts/reauth-google.mjs 재실행 필요.'
           : 'PDF 생성 실패 — ' + raw.slice(0, 200);
       return res.status(500).json({ error: msg });
     }
