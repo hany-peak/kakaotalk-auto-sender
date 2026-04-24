@@ -552,3 +552,43 @@ export async function fetchRepRrn(
     return null;
   }
 }
+
+/**
+ * 거래처 레코드의 개업일/은행명/계좌번호를 부분 업데이트한다. `undefined`
+ * 필드는 전송하지 않음 (기존 Airtable 값 유지). 빈 문자열은 null 로 보내
+ * Airtable 측 값 클리어. 실패 시 false.
+ */
+export async function updateAirtableAuxFields(
+  airtableRecordId: string,
+  patch: { openDate?: string; bankName?: string; accountNumber?: string },
+  cfg: NewClientConfig,
+  logError: (msg: string) => void,
+): Promise<boolean> {
+  if (!cfg.airtableNewClientPat || !cfg.airtableNewClientBaseId) {
+    logError('[new-client] airtable env missing — skip aux update');
+    return false;
+  }
+
+  const fields: Record<string, unknown> = {};
+  if (patch.openDate !== undefined) {
+    fields['개업일'] = patch.openDate.trim() === '' ? null : patch.openDate;
+  }
+  if (patch.bankName !== undefined) {
+    fields['은행명'] = patch.bankName.trim() === '' ? null : patch.bankName;
+  }
+  if (patch.accountNumber !== undefined) {
+    fields['계좌번호'] = patch.accountNumber.trim() === '' ? null : patch.accountNumber;
+  }
+  if (Object.keys(fields).length === 0) return true;
+
+  try {
+    const base = new Airtable({ apiKey: cfg.airtableNewClientPat }).base(cfg.airtableNewClientBaseId);
+    await base(cfg.airtableNewClientTableName).update([
+      { id: airtableRecordId, fields: fields as FieldSet },
+    ]);
+    return true;
+  } catch (err: any) {
+    logError(`[new-client] airtable aux update failed: ${err.message || err}`);
+    return false;
+  }
+}
