@@ -416,9 +416,12 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       const text = await ocrImage(buf, ext);
       const address = parseBizAddress(text);
       if (!address) {
+        const preview = text.slice(0, 600).replace(/\n/g, '⏎');
+        ctx.logError(`[new-client] ocr-bizaddress parse fail. file=${file.name} text(처음 600자):\n${text.slice(0, 2000)}`);
         return res.status(422).json({
-          error: '주소 추출 실패 — OCR 결과에서 "사업장 소재지" 라인을 찾지 못했습니다.',
+          error: '주소 추출 실패 — OCR 텍스트에서 사업장 소재지 라인을 인식하지 못했습니다.',
           file: file.name,
+          ocrPreview: preview,
         });
       }
 

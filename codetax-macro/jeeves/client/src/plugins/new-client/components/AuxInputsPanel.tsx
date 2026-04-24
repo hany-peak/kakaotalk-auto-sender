@@ -80,7 +80,7 @@ function OcrFromDropboxButton({ record, onRecordRefresh }: Props) {
     setPending(true);
     setMsg(null);
     try {
-      const res = await post<{ address: string; file: string; wrote: boolean; record: NewClientRecord }>(
+      const res = await post<{ address: string; file: string; wrote: boolean; record: NewClientRecord; ocrPreview?: string }>(
         `/new-client/${record.id}/ocr-bizaddress`,
       );
       onRecordRefresh(res.record);
@@ -91,7 +91,8 @@ function OcrFromDropboxButton({ record, onRecordRefresh }: Props) {
           : `✓ ${res.file} 에서 추출 (Airtable 값 유지)`,
       });
     } catch (e: any) {
-      setMsg({ kind: 'error', text: e.message ?? '실패' });
+      const detail = e?.detail?.ocrPreview ? ` · OCR 미리보기: ${e.detail.ocrPreview.slice(0, 200)}` : '';
+      setMsg({ kind: 'error', text: (e.message ?? '실패') + detail });
     } finally {
       setPending(false);
     }
