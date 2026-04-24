@@ -144,6 +144,17 @@ export async function listFolder(
 }
 
 /**
+ * Dropbox-API-Arg / Dropbox-API-Path-Root 헤더는 HTTP ByteString 이라
+ * non-ASCII (한글 등) 가 들어가면 fetch 가 거절한다. 그래서 JSON 문자열의
+ * 비-ASCII 문자를 \uXXXX 로 전부 이스케이프한 뒤 헤더에 싣는다 (Dropbox 공식 권장).
+ */
+function asciiEscapeJson(obj: unknown): string {
+  return JSON.stringify(obj).replace(/[-￿]/g, (c) =>
+    `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
+}
+
+/**
  * Download a file from Dropbox as a Buffer. `path` is the Dropbox path
  * (e.g. `/Team Folder/... /file.jpg`). Throws on any non-2xx response.
  */
@@ -156,8 +167,8 @@ export async function downloadFile(
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Dropbox-API-Arg': JSON.stringify({ path }),
-      'Dropbox-API-Path-Root': JSON.stringify({ '.tag': 'root', root: creds.teamRootNsId }),
+      'Dropbox-API-Arg': asciiEscapeJson({ path }),
+      'Dropbox-API-Path-Root': asciiEscapeJson({ '.tag': 'root', root: creds.teamRootNsId }),
     },
   });
   if (!res.ok) {
