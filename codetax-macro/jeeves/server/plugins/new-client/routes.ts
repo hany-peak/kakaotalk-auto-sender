@@ -503,10 +503,10 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     } catch (err: any) {
       ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
       const raw = String(err.message ?? err);
-      const msg = /GOOGLE_OAUTH/.test(raw)
-        ? raw
-        : /invalid_grant|unauthorized|permission/i.test(raw)
-          ? 'Google Drive 인증 실패 — scripts/reauth-google.mjs 재실행 필요.'
+      const msg = /spawn failed|ENOENT/i.test(raw)
+        ? 'LibreOffice 미설치 — brew install --cask libreoffice'
+        : /timeout/i.test(raw)
+          ? 'PDF 변환 시간 초과'
           : 'PDF 생성 실패 — ' + raw.slice(0, 200);
       return res.status(500).json({ error: msg });
     }

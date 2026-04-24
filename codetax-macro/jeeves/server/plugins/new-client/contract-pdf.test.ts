@@ -19,33 +19,47 @@ test('BUNDLE_GROUPS: 4개 묶음, 모든 시트명이 템플릿에 존재', asyn
   }
 });
 
-test('splitForBundle: CMS 그룹 → 입력시트 hidden + CMS만', async () => {
+test('splitForBundle: CMS 그룹 → CMS 만 visible, 나머지 hidden', async () => {
   const raw = await readFile(TEMPLATE);
   const wb = XLSX.read(raw, { type: 'buffer' });
   const cms = BUNDLE_GROUPS.find((g) => g.id === 'cms')!;
   const out = splitForBundle(wb, cms);
-  assert.deepEqual(out.SheetNames, ['입력시트', 'CMS ']);
-  const inputMeta = out.Workbook?.Sheets?.find((s) => s.name === '입력시트');
-  assert.equal(inputMeta?.Hidden, 1);
+  // 전 시트 유지
+  assert.equal(out.SheetNames.length, wb.SheetNames.length);
+  const meta = out.Workbook?.Sheets ?? [];
+  const hiddenFlag = (name: string) => meta.find((s) => s.name === name)?.Hidden;
+  assert.equal(hiddenFlag('CMS '), 0);
+  assert.equal(hiddenFlag('입력시트'), 1);
+  assert.equal(hiddenFlag('기장계약서 1 '), 1);
+  assert.equal(hiddenFlag('수임동의'), 1);
 });
 
-test('splitForBundle: 기장계약서 그룹 → 입력시트 + 표지/1/2', async () => {
+test('splitForBundle: 기장계약서 그룹 → 표지/1/2 만 visible', async () => {
   const raw = await readFile(TEMPLATE);
   const wb = XLSX.read(raw, { type: 'buffer' });
   const contract = BUNDLE_GROUPS.find((g) => g.id === 'contract')!;
   const out = splitForBundle(wb, contract);
-  assert.deepEqual(
-    out.SheetNames,
-    ['입력시트', '기장계약서표지 ', '기장계약서 1 ', '기장계약서 2 '],
-  );
+  const meta = out.Workbook?.Sheets ?? [];
+  const hiddenFlag = (name: string) => meta.find((s) => s.name === name)?.Hidden;
+  assert.equal(hiddenFlag('기장계약서표지 '), 0);
+  assert.equal(hiddenFlag('기장계약서 1 '), 0);
+  assert.equal(hiddenFlag('기장계약서 2 '), 0);
+  assert.equal(hiddenFlag('입력시트'), 1);
+  assert.equal(hiddenFlag('CMS '), 1);
+  assert.equal(hiddenFlag('수임동의'), 1);
 });
 
-test('splitForBundle: EDI 그룹 → 입력시트 + 국민 + 건강', async () => {
+test('splitForBundle: EDI 그룹 → 국민+건강 visible', async () => {
   const raw = await readFile(TEMPLATE);
   const wb = XLSX.read(raw, { type: 'buffer' });
   const edi = BUNDLE_GROUPS.find((g) => g.id === 'edi')!;
   const out = splitForBundle(wb, edi);
-  assert.deepEqual(out.SheetNames, ['입력시트', '국민 EDI', '건강 EDI ']);
+  const meta = out.Workbook?.Sheets ?? [];
+  const hiddenFlag = (name: string) => meta.find((s) => s.name === name)?.Hidden;
+  assert.equal(hiddenFlag('국민 EDI'), 0);
+  assert.equal(hiddenFlag('건강 EDI '), 0);
+  assert.equal(hiddenFlag('기장계약서표지 '), 1);
+  assert.equal(hiddenFlag('입력시트'), 1);
 });
 
 test('sanitizeFilename: 공백→_, 특수문자 제거', () => {
