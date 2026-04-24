@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { spawn } from 'node:child_process';
-import { mkdtemp, writeFile, readFile, rm, access } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, rm, access, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import JSZip from 'jszip';
@@ -105,8 +105,14 @@ export async function renderPdf(
       });
     });
 
-    const pdfPath = path.join(dir, `${baseName}.pdf`);
-    return await readFile(pdfPath);
+    // LibreOffice 출력 파일명은 입력명과 같되, macOS 정규화(NFC/NFD) 차이로
+    // 우리 기대 경로에 없을 수 있다. 디렉토리에서 .pdf 를 직접 찾아 읽는다.
+    const files = await readdir(dir);
+    const pdfName = files.find((f) => f.toLowerCase().endsWith('.pdf'));
+    if (!pdfName) {
+      throw new Error(`soffice 변환 후 PDF 파일 없음. dir=${dir} files=${files.join(',')}`);
+    }
+    return await readFile(path.join(dir, pdfName));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
