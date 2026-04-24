@@ -405,6 +405,8 @@ export function airtableToRecord(
     corpRegNumber: optionalString(fields['법인등록번호']),
     bizAddress: optionalString(fields['사업장주소']),
     bizPhone: optionalString(fields['전화번호']),
+    bankName: optionalString(fields['은행명']),
+    accountNumber: optionalString(fields['계좌번호']),
     checklist: airtableToChecklist(fields, createdAt),
   };
 }
@@ -488,4 +490,65 @@ export async function fetchAirtableRecord(
 
 export function isAirtableId(id: string): boolean {
   return id.startsWith('rec') && id.length >= 14;
+}
+
+/**
+ * 대표자 주민번호는 민감정보라 `NewClientRecord` 에 포함시키지 않고 (→ 클라이언트
+ * 로 절대 내려가지 않음), WEHAGO 자동등록 시점에만 별도로 읽는다.
+ * 실패/미설정/값 없음 시 null.
+ *
+ * 필드명 매칭 전략: 정확 일치 → 공백 정규화 일치 → "주민" 포함 스트링 키 중
+ * 비어있지 않은 첫 값. 매칭 실패 시 발견된 키 목록을 로그에 남겨 Airtable
+ * 쪽 실제 컬럼명을 확인할 수 있게 한다.
+ */
+export async function fetchRepRrn(
+  airtableRecordId: string,
+  cfg: NewClientConfig,
+  logError: (msg: string) => void,
+  log?: (msg: string) => void,
+): Promise<string | null> {
+  if (!cfg.airtableNewClientPat || !cfg.airtableNewClientBaseId) return null;
+  try {
+    const base = new Airtable({ apiKey: cfg.airtableNewClientPat }).base(cfg.airtableNewClientBaseId);
+    const rec = await base(cfg.airtableNewClientTableName).find(airtableRecordId);
+    const fields = rec.fields as Record<string, unknown>;
+
+    const normalize = (s: string): string => s.replace(/\s+/g, '').normalize('NFC');
+    const targetNormalized = normalize('대표자주민번호');
+
+    // Candidate keys: anything whose normalized form matches, or contains "주민".
+    const candidates: Array<{ key: string; value: unknown }> = [];
+    for (const [key, value] of Object.entries(fields)) {
+      const n = normalize(key);
+      if (n === targetNormalized || n.includes('주민')) {
+        candidates.push({ key, value });
+      }
+    }
+
+    // Pick the first candidate that has a non-empty string value.
+    for (const c of candidates) {
+      if (typeof c.value === 'string' && c.value.trim() !== '') {
+        return c.value.trim();
+      }
+      if (typeof c.value === 'number') {
+        return String(c.value);
+      }
+    }
+
+    // Nothing usable — log diagnostic so user can see what Airtable actually
+    // returned. Never log the values themselves (could be sensitive) — only
+    // key names and whether the value is empty.
+    const rrnKeyDiag = candidates.length > 0
+      ? candidates.map((c) => `${c.key}(${typeof c.value}${c.value === '' || c.value == null ? ':empty' : ''})`).join(', ')
+      : 'none';
+    const allKeys = Object.keys(fields).join(', ');
+    (log ?? logError)(
+      `[new-client] fetchRepRrn: 매칭되는 주민번호 필드 값이 비어있거나 없음. ` +
+        `주민 관련 키=[${rrnKeyDiag}] · 전체 키=[${allKeys}]`,
+    );
+    return null;
+  } catch (err: any) {
+    logError(`[new-client] airtable fetchRepRrn ${airtableRecordId} failed: ${err.message || err}`);
+    return null;
+  }
 }
