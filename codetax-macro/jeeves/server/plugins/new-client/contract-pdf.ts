@@ -1,9 +1,7 @@
 import * as XLSX from 'xlsx';
-import { spawn } from 'node:child_process';
-import { mkdtemp, writeFile, readFile, rm, access, readdir } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import * as path from 'node:path';
+import { Readable } from 'node:stream';
 import JSZip from 'jszip';
+import { google, drive_v3 } from 'googleapis';
 
 export interface BundleGroup {
   id: 'contract' | 'cms' | 'consent' | 'edi';
@@ -52,69 +50,64 @@ export function sanitizeFilename(s: string): string {
   return s.replace(/\s+/g, '_').replace(/[\/\\:*?"<>|]/g, '');
 }
 
-const MAC_SOFFICE = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+let driveClientCache: drive_v3.Drive | null = null;
 
-export async function resolveSofficePath(): Promise<string> {
-  const env = process.env.NEW_CLIENT_SOFFICE_PATH;
-  if (env && env.trim() !== '') return env;
-  try {
-    await access(MAC_SOFFICE);
-    return MAC_SOFFICE;
-  } catch {
-    return 'soffice';
+function getDriveClient(): drive_v3.Drive {
+  if (driveClientCache) return driveClientCache;
+  const raw = process.env.GOOGLE_SA_KEY;
+  if (!raw || raw.trim() === '') {
+    throw new Error('GOOGLE_SA_KEY 환경변수 없음 — 서비스 계정 JSON 전체를 한 줄로 넣어주세요.');
   }
+  let credentials: Record<string, unknown>;
+  try {
+    credentials = JSON.parse(raw);
+  } catch (e: any) {
+    throw new Error(`GOOGLE_SA_KEY JSON 파싱 실패: ${e.message}`);
+  }
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/drive.file'],
+  });
+  driveClientCache = google.drive({ version: 'v3', auth });
+  return driveClientCache;
 }
 
 /**
- * workbook을 임시 xlsx로 저장한 뒤 soffice 로 PDF 변환 → PDF Buffer 반환.
- * 실패/timeout/미설치 시 throw.
+ * workbook을 Google Drive에 Google Sheet로 업로드 → PDF export → 파일 삭제.
+ * 수식 재계산/렌더링은 Google Sheets가 처리하므로 LibreOffice 불필요.
+ * 실패 시 throw. 업로드 성공 후 export 실패해도 정리는 best-effort로 수행.
  */
 export async function renderPdf(
   wb: XLSX.WorkBook,
   baseName: string,
-  timeoutMs = 60_000,
 ): Promise<Buffer> {
-  const dir = await mkdtemp(path.join(tmpdir(), 'jeeves-contract-'));
+  const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', cellStyles: true }) as Buffer;
+  const drive = getDriveClient();
+
+  const created = await drive.files.create({
+    requestBody: {
+      name: baseName,
+      mimeType: 'application/vnd.google-apps.spreadsheet',
+    },
+    media: {
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      body: Readable.from(xlsxBuf),
+    },
+    fields: 'id',
+  });
+  const fileId = created.data.id;
+  if (!fileId) throw new Error('Drive 업로드 응답에 파일 id 없음');
+
   try {
-    const xlsxPath = path.join(dir, `${baseName}.xlsx`);
-    const xlsxBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx', cellStyles: true }) as Buffer;
-    await writeFile(xlsxPath, xlsxBuf);
-
-    const sofficePath = await resolveSofficePath();
-
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn(
-        sofficePath,
-        ['--headless', '--convert-to', 'pdf', '--outdir', dir, xlsxPath],
-        { stdio: ['ignore', 'pipe', 'pipe'] },
-      );
-      let stderr = '';
-      proc.stderr.on('data', (d) => { stderr += d.toString(); });
-      const timer = setTimeout(() => {
-        proc.kill('SIGKILL');
-        reject(new Error(`soffice timeout after ${timeoutMs}ms`));
-      }, timeoutMs);
-      proc.on('error', (err) => {
-        clearTimeout(timer);
-        reject(new Error(`soffice spawn failed: ${err.message} (경로: ${sofficePath})`));
-      });
-      proc.on('exit', (code) => {
-        clearTimeout(timer);
-        if (code === 0) resolve();
-        else reject(new Error(`soffice exit ${code}: ${stderr.slice(0, 500)}`));
-      });
-    });
-
-    // LibreOffice 출력 파일명은 입력명과 같되, macOS 정규화(NFC/NFD) 차이로
-    // 우리 기대 경로에 없을 수 있다. 디렉토리에서 .pdf 를 직접 찾아 읽는다.
-    const files = await readdir(dir);
-    const pdfName = files.find((f) => f.toLowerCase().endsWith('.pdf'));
-    if (!pdfName) {
-      throw new Error(`soffice 변환 후 PDF 파일 없음. dir=${dir} files=${files.join(',')}`);
-    }
-    return await readFile(path.join(dir, pdfName));
+    const pdfRes = await drive.files.export(
+      { fileId, mimeType: 'application/pdf' },
+      { responseType: 'arraybuffer' },
+    );
+    return Buffer.from(pdfRes.data as ArrayBuffer);
   } finally {
-    await rm(dir, { recursive: true, force: true });
+    drive.files.delete({ fileId }).catch(() => {
+      // best-effort cleanup; drive.file scope keeps blast radius minimal
+    });
   }
 }
 

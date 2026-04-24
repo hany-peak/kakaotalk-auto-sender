@@ -502,11 +502,12 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       return res.send(pdf);
     } catch (err: any) {
       ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
-      const msg = /spawn failed|ENOENT/i.test(err.message ?? '')
-        ? 'LibreOffice 미설치 — PDF 변환 불가.'
-        : /timeout/i.test(err.message ?? '')
-          ? 'PDF 변환 시간 초과'
-          : 'PDF 생성 실패';
+      const raw = String(err.message ?? err);
+      const msg = /GOOGLE_SA_KEY/.test(raw)
+        ? raw
+        : /invalid_grant|unauthorized|permission/i.test(raw)
+          ? 'Google Drive 인증 실패 — 서비스 계정 키 확인 필요.'
+          : 'PDF 생성 실패 — ' + raw.slice(0, 200);
       return res.status(500).json({ error: msg });
     }
   });
