@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useApi } from '../../../core/hooks/useApi';
 import { useAuxInputs } from '../hooks/useAuxInputs';
 import type { NewClientRecord } from '../types';
 
@@ -59,7 +61,57 @@ export function AuxInputsPanel({ record, onRecordRefresh }: Props) {
         {field('은행명', 'bankName', 'text')}
         {field('계좌번호', 'accountNumber', 'text')}
       </div>
-      {field('사업장 소재지', 'bizAddress', 'text', 'w-full')}
+      <div className="flex items-end gap-2">
+        <div className="flex-1 min-w-0">
+          {field('사업장 소재지', 'bizAddress', 'text', 'w-full')}
+        </div>
+        <OcrFromDropboxButton record={record} onRecordRefresh={onRecordRefresh} />
+      </div>
+    </div>
+  );
+}
+
+function OcrFromDropboxButton({ record, onRecordRefresh }: Props) {
+  const { post } = useApi();
+  const [pending, setPending] = useState(false);
+  const [msg, setMsg] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+
+  async function onClick() {
+    setPending(true);
+    setMsg(null);
+    try {
+      const res = await post<{ address: string; file: string; wrote: boolean; record: NewClientRecord }>(
+        `/new-client/${record.id}/ocr-bizaddress`,
+      );
+      onRecordRefresh(res.record);
+      setMsg({
+        kind: 'info',
+        text: res.wrote
+          ? `✓ ${res.file} 에서 추출 → Airtable 저장`
+          : `✓ ${res.file} 에서 추출 (Airtable 값 유지)`,
+      });
+    } catch (e: any) {
+      setMsg({ kind: 'error', text: e.message ?? '실패' });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={onClick}
+        className="px-2 py-1 rounded text-[11px] border border-border hover:bg-surface2 disabled:opacity-50 whitespace-nowrap"
+      >
+        {pending ? '추출 중…' : '드롭박스 사업자등록증에서 읽기'}
+      </button>
+      {msg && (
+        <span className={`text-[10px] ${msg.kind === 'error' ? 'text-danger' : 'text-muted'}`}>
+          {msg.text}
+        </span>
+      )}
     </div>
   );
 }

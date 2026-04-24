@@ -94,6 +94,8 @@ export function _resetTokenCacheForTests(): void {
 interface FolderEntry {
   '.tag': 'folder' | 'file';
   name: string;
+  path_lower?: string;
+  path_display?: string;
 }
 
 async function dbxApi<T>(
@@ -120,13 +122,14 @@ async function dbxApi<T>(
 export async function listFolder(
   path: string,
   creds: DropboxCreds,
+  recursive = false,
 ): Promise<FolderEntry[]> {
   const entries: FolderEntry[] = [];
   let cursor: string | null = null;
   let hasMore = true;
   while (hasMore) {
     const endpoint: string = cursor ? '/2/files/list_folder/continue' : '/2/files/list_folder';
-    const body: unknown = cursor ? { cursor } : { path, recursive: false };
+    const body: unknown = cursor ? { cursor } : { path, recursive };
     const resp: { entries: FolderEntry[]; has_more: boolean; cursor: string } =
       await dbxApi<{ entries: FolderEntry[]; has_more: boolean; cursor: string }>(
         endpoint,
@@ -138,6 +141,51 @@ export async function listFolder(
     cursor = resp.cursor;
   }
   return entries;
+}
+
+/**
+ * Download a file from Dropbox as a Buffer. `path` is the Dropbox path
+ * (e.g. `/Team Folder/... /file.jpg`). Throws on any non-2xx response.
+ */
+export async function downloadFile(
+  path: string,
+  creds: DropboxCreds,
+): Promise<Buffer> {
+  const token = await getAccessToken(creds);
+  const res = await fetch('https://content.dropboxapi.com/2/files/download', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Dropbox-API-Arg': JSON.stringify({ path }),
+      'Dropbox-API-Path-Root': JSON.stringify({ '.tag': 'root', root: creds.teamRootNsId }),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`dropbox download failed: ${res.status} ${await res.text()}`);
+  }
+  const ab = await res.arrayBuffer();
+  return Buffer.from(ab);
+}
+
+/**
+ * Find a 사업자등록증 file anywhere under the given client folder.
+ * 매칭 규칙: 파일명에 "사업자등록증" 포함 + 이미지/PDF 확장자.
+ * 여러 개면 가장 최근에 수정된 것(이름순 최상단 — 보통 prefix가 날짜)을 우선.
+ */
+export async function findBusinessLicenseFile(
+  clientFolderPath: string,
+  creds: DropboxCreds,
+): Promise<{ path: string; name: string } | null> {
+  const all = await listFolder(clientFolderPath, creds, true);
+  const matches = all
+    .filter((e) => e['.tag'] === 'file')
+    .filter((e) => /사업자등록증/.test(e.name))
+    .filter((e) => /\.(jpe?g|png|pdf)$/i.test(e.name))
+    .filter((e) => !!e.path_display);
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => b.name.localeCompare(a.name));
+  const pick = matches[0];
+  return { path: pick.path_display!, name: pick.name };
 }
 
 /**

@@ -29,9 +29,12 @@ import {
   createClientFolders,
   extractCreds,
   findClientFolder,
+  findBusinessLicenseFile,
+  downloadFile as dropboxDownloadFile,
   getFolderStatus,
   resolveParentPath,
 } from './dropbox';
+import { ocrImage, parseBizAddress } from './ocr';
 import { extractWehagoCreds, registerWehagoClient } from './wehago';
 import type { ChecklistItemKey } from './checklist-config';
 import type { NewClientRecord } from './types';
@@ -382,6 +385,57 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     const record = await fetchAirtableRecord(id, cfg, ctx.logError);
     if (!record) return res.status(500).json({ error: 'fetch after update failed' });
     return res.json({ record });
+  });
+
+  app.post('/api/new-client/:id/ocr-bizaddress', async (req, res) => {
+    const id = req.params.id;
+    if (!isAirtableId(id)) return res.status(400).json({ error: 'invalid airtable id' });
+
+    const cfg = loadConfig();
+    const record = await fetchAirtableRecord(id, cfg, ctx.logError);
+    if (!record) return res.status(404).json({ error: 'record not found' });
+
+    const creds = extractCreds(cfg);
+    if (!creds) return res.status(500).json({ error: 'dropbox env missing' });
+
+    try {
+      if (!record.entityType) {
+        return res.status(400).json({ error: 'entityType 미설정 거래처' });
+      }
+      const parentPath = resolveParentPath(record.entityType, record.businessScope);
+      const clientFolder = await findClientFolder(parentPath, record.companyName, creds);
+      if (!clientFolder) {
+        return res.status(404).json({ error: '드롭박스에서 거래처 폴더를 찾지 못했습니다.' });
+      }
+      const file = await findBusinessLicenseFile(clientFolder, creds);
+      if (!file) {
+        return res.status(404).json({ error: '사업자등록증 파일을 찾지 못했습니다.' });
+      }
+      const buf = await dropboxDownloadFile(file.path, creds);
+      const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
+      const text = await ocrImage(buf, ext);
+      const address = parseBizAddress(text);
+      if (!address) {
+        return res.status(422).json({
+          error: '주소 추출 실패 — OCR 결과에서 "사업장 소재지" 라인을 찾지 못했습니다.',
+          file: file.name,
+        });
+      }
+
+      // Airtable이 비어있으면 write-back
+      let wrote = false;
+      if (!record.bizAddress || record.bizAddress.trim() === '') {
+        wrote = await updateAirtableAuxFields(id, { bizAddress: address }, cfg, ctx.logError);
+      }
+      const refreshed = await fetchAirtableRecord(id, cfg, ctx.logError);
+      return res.json({ address, file: file.name, wrote, record: refreshed });
+    } catch (err: any) {
+      ctx.logError(`[new-client] ocr-bizaddress failed: ${err.message || err}`);
+      const msg = /spawn failed|ENOENT/i.test(err.message ?? '')
+        ? 'tesseract 미설치 — brew install tesseract tesseract-lang'
+        : err.message || String(err);
+      return res.status(500).json({ error: msg });
+    }
   });
 
   app.get('/api/new-client/:id/contract-download', async (req, res) => {
