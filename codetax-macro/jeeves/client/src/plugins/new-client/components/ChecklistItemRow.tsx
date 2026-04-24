@@ -11,13 +11,16 @@ import type {
   ChecklistItemDefinition,
   ChecklistItemState,
   ChecklistUpdateInput,
+  NewClientRecord,
 } from '../types';
+import { ContractDownloadButtons } from './ContractDownloadButtons';
 
 interface Props {
   def: ChecklistItemDefinition;
   state: ChecklistItemState | undefined;
   pending: boolean;
   clientId: string | null;
+  record: NewClientRecord;
   onUpdate: (payload: ChecklistUpdateInput) => Promise<void>;
   onDropboxUpdate?: (next: ChecklistItemState) => void;
 }
@@ -29,7 +32,8 @@ function formatKst(iso: string | undefined): string {
   return `${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')} ${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDropboxUpdate }: Props) {
+export function ChecklistItemRow({ def, state, pending, clientId, record, onUpdate, onDropboxUpdate }: Props) {
+  const recordOpenDate = record.openDate;
   const done = isItemDone(def, state);
   const isDropbox = def.key === 'dropboxFolder';
   const [localValue, setLocalValue] = useState<string>(state?.value ?? '');
@@ -90,8 +94,7 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
   async function handleWehagoRegister() {
     setErr(null);
     try {
-      const res = await registerWehago();
-      // Optimistically update row status so user sees ✓ immediately.
+      const res = await registerWehago(recordOpenDate ?? '');
       await onUpdate({ status: res.state.status });
     } catch (e: any) {
       setErr(e.message ?? 'wehago register failed');
@@ -106,6 +109,7 @@ export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDr
       <td className="py-2 pr-3 font-medium whitespace-nowrap">{def.label}</td>
       <td className="py-2 pr-3 text-xs text-muted">
         <div>{def.description ?? ''}</div>
+        {def.key === 'contract' && <ContractDownloadButtons record={record} />}
         {def.key === 'katalkRoom' && (
           <div className="flex gap-1 mt-1 flex-wrap">
             {KATALK_TEMPLATES.map((t, i) => (

@@ -5,17 +5,19 @@ import type {
   ChecklistItemState,
   ChecklistState,
   ChecklistUpdateInput,
+  NewClientRecord,
 } from '../types';
 
 interface Props {
   checklist: ChecklistState;
   pendingKey: ChecklistItemKey | null;
   clientId: string | null;
+  record: NewClientRecord;
   onUpdate: (itemKey: ChecklistItemKey, payload: ChecklistUpdateInput) => Promise<void>;
   onDropboxStateUpdate?: (next: ChecklistItemState) => void;
 }
 
-export function ChecklistTable({ checklist, pendingKey, clientId, onUpdate, onDropboxStateUpdate }: Props) {
+export function ChecklistTable({ checklist, pendingKey, clientId, record, onUpdate, onDropboxStateUpdate }: Props) {
   const sorted = [...CHECKLIST_ITEMS].sort((a, b) => (a.step ?? 99) - (b.step ?? 99));
   return (
     <div className="overflow-x-auto">
@@ -38,6 +40,7 @@ export function ChecklistTable({ checklist, pendingKey, clientId, onUpdate, onDr
               state={checklist[def.key]}
               pending={pendingKey === def.key}
               clientId={clientId}
+              record={record}
               onUpdate={(payload) => onUpdate(def.key, payload)}
               onDropboxUpdate={def.key === 'dropboxFolder' ? onDropboxStateUpdate : undefined}
             />

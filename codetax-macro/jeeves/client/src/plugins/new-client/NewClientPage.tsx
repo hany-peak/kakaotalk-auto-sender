@@ -4,6 +4,7 @@ import { useApi } from '../../core/hooks/useApi';
 import { NewClientForm, type NewClientFormValues } from './components/NewClientForm';
 import { ClientListTable } from './components/ClientListTable';
 import { ChecklistTable } from './components/ChecklistTable';
+import { AuxInputsPanel } from './components/AuxInputsPanel';
 import { ProgressPill } from './components/ProgressPill';
 import { useClientList, useClientDetail } from './hooks/useNewClients';
 import { useChecklistUpdate } from './hooks/useChecklistUpdate';
@@ -201,12 +202,18 @@ function DetailView({
 
       <InfoCard record={record} />
 
+      <AuxInputsPanel
+        record={record}
+        onRecordRefresh={(r) => setRecord(r)}
+      />
+
       <div>
         <h3 className="text-sm font-medium mb-2 text-muted">체크리스트</h3>
         <ChecklistTable
           checklist={record.checklist}
           pendingKey={pending}
           clientId={clientId}
+          record={record}
           onUpdate={handleUpdate}
           onDropboxStateUpdate={(next) => {
             setRecord((prev) =>
