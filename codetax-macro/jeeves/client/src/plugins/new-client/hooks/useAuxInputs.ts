@@ -2,18 +2,19 @@ import { useCallback, useRef, useState } from 'react';
 import { useApi } from '../../../core/hooks/useApi';
 import type { NewClientRecord } from '../types';
 
-type AuxFieldKey = 'openDate' | 'bankName' | 'accountNumber';
+type AuxFieldKey = 'openDate' | 'bankName' | 'accountNumber' | 'bizAddress';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 interface AuxState {
   openDate: string;
   bankName: string;
   accountNumber: string;
+  bizAddress: string;
 }
 
 export function useAuxInputs(
   clientId: string,
-  initial: { openDate?: string; bankName?: string; accountNumber?: string },
+  initial: { openDate?: string; bankName?: string; accountNumber?: string; bizAddress?: string },
   onRecordRefresh: (record: NewClientRecord) => void,
 ) {
   const { patch } = useApi();
@@ -21,9 +22,10 @@ export function useAuxInputs(
     openDate: initial.openDate ?? '',
     bankName: initial.bankName ?? '',
     accountNumber: initial.accountNumber ?? '',
+    bizAddress: initial.bizAddress ?? '',
   });
   const [status, setStatus] = useState<Record<AuxFieldKey, SaveStatus>>({
-    openDate: 'idle', bankName: 'idle', accountNumber: 'idle',
+    openDate: 'idle', bankName: 'idle', accountNumber: 'idle', bizAddress: 'idle',
   });
   const lastSaved = useRef<AuxState>(values);
   const fadeTimers = useRef<Partial<Record<AuxFieldKey, ReturnType<typeof setTimeout>>>>({});

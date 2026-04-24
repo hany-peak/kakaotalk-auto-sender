@@ -369,10 +369,11 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       return res.status(400).json({ error: 'invalid airtable id' });
     }
     const body = req.body ?? {};
-    const patch: { openDate?: string; bankName?: string; accountNumber?: string } = {};
+    const patch: { openDate?: string; bankName?: string; accountNumber?: string; bizAddress?: string } = {};
     if (typeof body.openDate === 'string') patch.openDate = body.openDate;
     if (typeof body.bankName === 'string') patch.bankName = body.bankName;
     if (typeof body.accountNumber === 'string') patch.accountNumber = body.accountNumber;
+    if (typeof body.bizAddress === 'string') patch.bizAddress = body.bizAddress;
 
     const cfg = loadConfig();
     const ok = await updateAirtableAuxFields(id, patch, cfg, ctx.logError);

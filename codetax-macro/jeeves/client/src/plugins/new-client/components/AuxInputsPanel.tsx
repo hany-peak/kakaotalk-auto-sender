@@ -7,7 +7,7 @@ interface Props {
 }
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-type AuxFieldKey = 'openDate' | 'bankName' | 'accountNumber';
+type AuxFieldKey = 'openDate' | 'bankName' | 'accountNumber' | 'bizAddress';
 
 function statusLabel(s: SaveStatus): string {
   if (s === 'saving') return '저장 중…';
@@ -23,6 +23,7 @@ export function AuxInputsPanel({ record, onRecordRefresh }: Props) {
       openDate: record.openDate,
       bankName: record.bankName,
       accountNumber: record.accountNumber,
+      bizAddress: record.bizAddress,
     },
     onRecordRefresh,
   );
@@ -31,8 +32,9 @@ export function AuxInputsPanel({ record, onRecordRefresh }: Props) {
     label: string,
     key: AuxFieldKey,
     type: 'date' | 'text',
+    widthClass = '',
   ) => (
-    <div className="flex flex-col gap-0.5">
+    <div className={`flex flex-col gap-0.5 ${widthClass}`}>
       <label className="text-[11px] text-muted">{label}</label>
       <div className="flex items-center gap-1.5">
         <input
@@ -40,9 +42,9 @@ export function AuxInputsPanel({ record, onRecordRefresh }: Props) {
           value={values[key]}
           onChange={(e) => setField(key, e.target.value)}
           onBlur={() => commitField(key)}
-          className="px-2 py-1 rounded border border-border bg-surface text-xs text-white [color-scheme:dark]"
+          className="px-2 py-1 rounded border border-border bg-surface text-xs text-white [color-scheme:dark] w-full"
         />
-        <span className={`text-[10px] ${status[key] === 'error' ? 'text-danger' : 'text-muted'}`}>
+        <span className={`text-[10px] whitespace-nowrap ${status[key] === 'error' ? 'text-danger' : 'text-muted'}`}>
           {statusLabel(status[key])}
         </span>
       </div>
@@ -52,11 +54,12 @@ export function AuxInputsPanel({ record, onRecordRefresh }: Props) {
   return (
     <div className="rounded border border-border bg-surface2/40 p-3 mb-3">
       <div className="text-xs text-muted mb-2">거래처 보조 정보 (계약서/문서 생성용)</div>
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-4 flex-wrap mb-2">
         {field('개업 연월일', 'openDate', 'date')}
         {field('은행명', 'bankName', 'text')}
         {field('계좌번호', 'accountNumber', 'text')}
       </div>
+      {field('사업장 소재지', 'bizAddress', 'text', 'w-full')}
     </div>
   );
 }

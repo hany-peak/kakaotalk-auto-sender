@@ -560,7 +560,7 @@ export async function fetchRepRrn(
  */
 export async function updateAirtableAuxFields(
   airtableRecordId: string,
-  patch: { openDate?: string; bankName?: string; accountNumber?: string },
+  patch: { openDate?: string; bankName?: string; accountNumber?: string; bizAddress?: string },
   cfg: NewClientConfig,
   logError: (msg: string) => void,
 ): Promise<boolean> {
@@ -578,6 +578,9 @@ export async function updateAirtableAuxFields(
   }
   if (patch.accountNumber !== undefined) {
     fields['계좌번호'] = patch.accountNumber.trim() === '' ? null : patch.accountNumber;
+  }
+  if (patch.bizAddress !== undefined) {
+    fields['사업장주소'] = patch.bizAddress.trim() === '' ? null : patch.bizAddress;
   }
   if (Object.keys(fields).length === 0) return true;
 
