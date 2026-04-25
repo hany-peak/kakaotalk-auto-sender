@@ -1,63 +1,87 @@
 import Airtable from 'airtable';
-import { loadConfig } from './config';
-import type { ThebillRow } from './parser';
+import { loadConfig, type ThebillConfig } from './config';
+import { classifyStatus, normalizeBizNo, type ThebillRow, type StatusClass } from './parser';
+import type { ScrapeMode } from './scraper';
 
-export interface SyncResult {
+export interface UpdateResult {
   total: number;
-  updated: number;
-  created: number;
-  failed: number;
+  successUpdated: number;
+  failureUpdated: number;
   skipped: number;
-  errors: { key: string; error: string }[];
+  unmatched: string[];
+  errors: { bizNo: string; error: string }[];
 }
 
-function escapeFormulaValue(v: string): string {
-  return v.replace(/'/g, "\\'");
+export function decideStatus(
+  cls: StatusClass,
+  mode: ScrapeMode,
+): string | null {
+  if (cls === 'unknown') return null;
+  if (cls === 'success') return '출금성공';
+  // failure
+  return mode === 'withdrawal' ? '자동재출금' : '출금실패';
 }
 
-export async function upsertAll(rows: ThebillRow[]): Promise<SyncResult> {
-  const cfg = loadConfig();
-  const base = new Airtable({ apiKey: cfg.airtablePat }).base(cfg.airtableBaseId);
-  const table = base(cfg.airtableTableName);
+function escapeFormula(s: string): string {
+  return s.replace(/'/g, "\\'");
+}
 
-  const result: SyncResult = {
+function currentMonthView(): string {
+  const m = String(new Date().getMonth() + 1);
+  return `[${m}월] 세금계산서 및 입금현황`;
+}
+
+export async function updateFeeTable(
+  rows: ThebillRow[],
+  mode: ScrapeMode,
+  cfgOverride?: ThebillConfig,
+): Promise<UpdateResult> {
+  const cfg = cfgOverride ?? loadConfig();
+  const base = new Airtable({ apiKey: cfg.airtableFeePat }).base(cfg.airtableFeeBaseId);
+  const table = base(cfg.airtableFeeTableId);
+  const view = currentMonthView();
+
+  const result: UpdateResult = {
     total: rows.length,
-    updated: 0,
-    created: 0,
-    failed: 0,
+    successUpdated: 0,
+    failureUpdated: 0,
     skipped: 0,
+    unmatched: [],
     errors: [],
   };
 
   for (const row of rows) {
-    const keyVal = row[cfg.airtableKeyField];
-    if (keyVal === null || keyVal === undefined || keyVal === '') {
+    const cls = classifyStatus(row.status);
+    const newStatus = decideStatus(cls, mode);
+    if (newStatus === null) {
       result.skipped += 1;
       continue;
     }
 
-    const keyStr = String(keyVal);
+    const bizNo = normalizeBizNo(row.bizNo);
     try {
-      const existing = await table
+      const records = await table
         .select({
+          view,
           maxRecords: 1,
-          filterByFormula: `{${cfg.airtableKeyField}}='${escapeFormulaValue(keyStr)}'`,
+          filterByFormula: `{${cfg.airtableFeeBizNoField}}='${escapeFormula(bizNo)}'`,
         })
         .firstPage();
 
-      const fields = row as Record<string, unknown>;
-
-      if (existing.length > 0) {
-        await table.update(existing[0].id, fields as any);
-        result.updated += 1;
-      } else {
-        await table.create(fields as any);
-        result.created += 1;
+      if (records.length === 0) {
+        result.unmatched.push(bizNo);
+        continue;
       }
+
+      await table.update(records[0].id, {
+        [cfg.airtableFeeStatusField]: newStatus,
+      });
+
+      if (cls === 'success') result.successUpdated += 1;
+      else result.failureUpdated += 1;
     } catch (err) {
-      result.failed += 1;
       result.errors.push({
-        key: keyStr,
+        bizNo,
         error: err instanceof Error ? err.message : String(err),
       });
     }
