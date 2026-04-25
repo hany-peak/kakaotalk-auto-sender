@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 export interface ThebillRow {
   bizNo: string;
   memberName: string;
+  representative: string;
   amount: number;
   status: string;
   drawDate: string;
@@ -13,6 +14,7 @@ export type StatusClass = 'success' | 'failure' | 'unknown';
 const HEADER_CANDIDATES = {
   bizNo: ['사업자번호', '주민(사업자)번호', '주민번호', '식별번호'],
   memberName: ['회원명', '고객명', '업체명'],
+  representative: ['대표자', '대표자명'],
   amount: ['금액', '청구금액', '출금액', '납부금액'],
   status: ['상태', '결과', '처리상태'],
   drawDate: ['출금일', '처리일', '결제일'],
@@ -52,6 +54,7 @@ export function parse(xlsxPath: string): ThebillRow[] {
     .map((r) => ({
       bizNo: normalizeBizNo(pickField(r, HEADER_CANDIDATES.bizNo) as string | number),
       memberName: String(pickField(r, HEADER_CANDIDATES.memberName) ?? ''),
+      representative: String(pickField(r, HEADER_CANDIDATES.representative) ?? ''),
       amount: Number(pickField(r, HEADER_CANDIDATES.amount) ?? 0),
       status: String(pickField(r, HEADER_CANDIDATES.status) ?? ''),
       drawDate: String(pickField(r, HEADER_CANDIDATES.drawDate) ?? ''),

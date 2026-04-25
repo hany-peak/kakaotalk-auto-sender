@@ -63,15 +63,9 @@ export async function run(
 
     const durationMs = Date.now() - start;
     stage = 'slack';
-    await slack.notifySuccess(
-      {
-        total: updateResult.total,
-        updated: updateResult.successUpdated + updateResult.failureUpdated,
-        created: 0,
-        failed: updateResult.errors.length,
-        skipped: updateResult.skipped,
-        errors: updateResult.errors.map((e) => ({ key: e.bizNo, error: e.error })),
-      },
+    await slack.notifyUnpaidSummary(
+      updateResult.failureRows,
+      updateResult.total,
       durationMs,
     );
 

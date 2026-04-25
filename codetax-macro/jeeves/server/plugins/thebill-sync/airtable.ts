@@ -4,6 +4,14 @@ import { classifyStatus, normalizeBizNo, type ThebillRow, type StatusClass } fro
 import { mostRecentMonth25 } from './business-day';
 import type { ScrapeMode } from './scraper';
 
+export interface UnpaidEntry {
+  name: string;
+  representative: string;
+  amount: number;
+  yearMonth: string; // 'YYYY-MM' (출금일 기준)
+  reason: string; // raw 더빌 status, 예: "출금실패 잔액부족 [자동출금] 재출금중지"
+}
+
 export interface UpdateResult {
   total: number;
   successUpdated: number;
@@ -11,6 +19,7 @@ export interface UpdateResult {
   skipped: number;
   unmatched: string[];
   errors: { bizNo: string; error: string }[];
+  failureRows: UnpaidEntry[];
 }
 
 /**
@@ -56,7 +65,13 @@ export async function updateFeeTable(
     skipped: 0,
     unmatched: [],
     errors: [],
+    failureRows: [],
   };
+
+  function ymOf(drawDate: string): string {
+    // drawDate format from 더빌: "2026-04-27" or "" — slice first 7 chars.
+    return (drawDate ?? '').slice(0, 7);
+  }
 
   for (const row of rows) {
     const cls = classifyStatus(row.status);
@@ -99,8 +114,19 @@ export async function updateFeeTable(
 
       await table.update(record.id, updates);
 
-      if (cls === 'success') result.successUpdated += 1;
-      else result.failureUpdated += 1;
+      if (cls === 'success') {
+        result.successUpdated += 1;
+      } else {
+        result.failureUpdated += 1;
+        // 슬랙 알림용 — 새로 출금실패로 마킹된 row 기록.
+        result.failureRows.push({
+          name: row.memberName,
+          representative: row.representative,
+          amount: row.amount,
+          yearMonth: ymOf(row.drawDate),
+          reason: row.status,
+        });
+      }
     } catch (err) {
       result.errors.push({
         bizNo,
