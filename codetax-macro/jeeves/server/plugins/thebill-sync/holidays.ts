@@ -34,6 +34,14 @@ function toIsoDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/**
+ * Checks whether the given Date is a Korean public holiday.
+ *
+ * Treats `d` in the runtime's **local timezone** — calendar parts come from
+ * `getFullYear/Month/Date` (not UTC variants). Pass Dates that you intended
+ * as Korean local calendar dates (the server runs in Asia/Seoul). Year
+ * not in the dataset returns false.
+ */
 export function isHoliday(d: Date): boolean {
   const list = HOLIDAY_DATES[d.getFullYear()];
   if (!list) return false;
