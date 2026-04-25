@@ -27,7 +27,8 @@ const tdC: React.CSSProperties = {
   textAlign: 'center',
 };
 
-export function ContractMain2(_props: TemplateProps) {
+export function ContractMain2({ retroactiveFee }: TemplateProps) {
+  const feeText = retroactiveFee && retroactiveFee.trim() !== '' ? retroactiveFee : '_______';
   return (
     <PageFrame margin={{ top: '12mm', right: '14mm', bottom: '12mm', left: '14mm' }}>
       <div style={clauseTitle}>제 1 조 (세무서비스의 범위)</div>
@@ -94,7 +95,7 @@ export function ContractMain2(_props: TemplateProps) {
         제1조 각 호의 보수는 "[별첨 1] 기장 및 세무조정 세무서비스 보수표"에 근거하여 각각 다음과 같이 하여 위임자가 부담한다.
       </div>
       <div style={sectionBlock}>
-        ③ 계약일 전 기간분의 기장에 대한 보수(이하 '소급기장수'라 칭함)는 금 테스트(VAT포함)원으로 하고, 등 금액은 계약과 동시에 지급한다.
+        ③ 계약일 전 기간분의 기장에 대한 보수(이하 '소급기장수'라 칭함)는 금 {feeText}(VAT포함)원으로 하고, 등 금액은 계약과 동시에 지급한다.
       </div>
       <div style={sectionBlock}>
         ② <b>"결산업무"</b> 및 <b>"세무조정업무"</b>의 보수(이하 <b>"세무조정보수"</b>라 함)는 전항의 보수와는 별도로 종합소득세(위임자가 법인인 경우 법인세) 신고 시 <b>[별첨 1의 2] (세무조정보수표)</b>를 별도로 청구한다. <b>[별첨 1의 2] (세무조정보수표)</b>는 물가상승률 및 인건비상승률 등에 따라 조정될 수 있다.

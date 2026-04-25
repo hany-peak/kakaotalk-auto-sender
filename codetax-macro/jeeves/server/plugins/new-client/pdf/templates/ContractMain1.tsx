@@ -1,21 +1,8 @@
 import * as React from 'react';
 import { PageFrame } from './shared/PageFrame';
-import type { TemplateProps } from './shared/TemplateProps';
+import { DEFAULT_AGENT, type TemplateProps } from './shared/TemplateProps';
 
 const TEAL_DARK = '#234C50';
-
-const SUNIM = {
-  bizRegNumber: '306-29-93669',
-  industry1: '전문,과학 및 기술서비스업',
-  industry2: '세무사',
-  companyName: '코드세무회계',
-  address: '서울 강남구 테헤란로1길 28-11 4층 4035호',
-  homepage: 'https://codetax.co.kr/',
-  phone: '010-7276-2430',
-  fax: '0506-200-1788',
-  email: 'help@codetax.co.kr',
-  representative: '정 주 희 세 무 사',
-};
 
 const CONTRACT_TYPES: Array<{ label: string; checked?: boolean }> = [
   { label: '기장대리', checked: true },
@@ -50,7 +37,8 @@ const tdSubLabel: React.CSSProperties = {
   textAlign: 'center',
 };
 
-export function ContractMain1({ record, rrn }: TemplateProps) {
+export function ContractMain1({ record, agent = DEFAULT_AGENT }: TemplateProps) {
+  const sunim = agent;
   return (
     <PageFrame margin={{ top: '18mm', right: '18mm', bottom: '18mm', left: '18mm' }}>
       <h1
@@ -120,32 +108,32 @@ export function ContractMain1({ record, rrn }: TemplateProps) {
             <tr>
               <td style={tdLabel}>사업자등록번호</td>
               <td style={td} colSpan={4}>
-                {SUNIM.bizRegNumber}
+                {sunim.bizRegNumber}
               </td>
             </tr>
             <tr>
               <td style={tdLabel}>주업태 및 종목</td>
               <td style={{ ...td, width: '14mm', textAlign: 'center' }}>①</td>
-              <td style={td}>{SUNIM.industry1}</td>
+              <td style={td}>{sunim.industry1}</td>
               <td style={{ ...td, width: '14mm', textAlign: 'center' }}>②</td>
-              <td style={{ ...td, width: '40mm' }}>{SUNIM.industry2}</td>
+              <td style={{ ...td, width: '40mm' }}>{sunim.industry2}</td>
             </tr>
             <tr>
               <td style={tdLabel}>회 사 명</td>
               <td style={td} colSpan={4}>
-                {SUNIM.companyName}
+                {sunim.companyName}
               </td>
             </tr>
             <tr>
               <td style={tdLabel}>사업장 소재지</td>
               <td style={td} colSpan={4}>
-                {SUNIM.address}
+                {sunim.address}
               </td>
             </tr>
             <tr>
               <td style={tdLabel}>홈 페 이 지</td>
               <td style={{ ...td, color: '#1A4FB3', textDecoration: 'underline' }} colSpan={4}>
-                {SUNIM.homepage}
+                {sunim.homepage}
               </td>
             </tr>
             <tr>
@@ -153,7 +141,7 @@ export function ContractMain1({ record, rrn }: TemplateProps) {
                 연 락 처
               </td>
               <td style={tdSubLabel}>(핸드폰)</td>
-              <td style={{ ...td, width: '40mm' }}>{SUNIM.phone}</td>
+              <td style={{ ...td, width: '40mm' }}>{sunim.phone}</td>
               <td rowSpan={2} style={tdSubLabel}>
                 (e-mail)
               </td>
@@ -161,17 +149,17 @@ export function ContractMain1({ record, rrn }: TemplateProps) {
                 rowSpan={2}
                 style={{ ...td, color: '#1A4FB3', textDecoration: 'underline' }}
               >
-                {SUNIM.email}
+                {sunim.email}
               </td>
             </tr>
             <tr>
               <td style={tdSubLabel}>(팩 스)</td>
-              <td style={td}>{SUNIM.fax}</td>
+              <td style={td}>{sunim.fax}</td>
             </tr>
             <tr>
               <td style={tdLabel}>대 표 자</td>
               <td style={td} colSpan={4}>
-                {SUNIM.representative}
+                {sunim.representative}
               </td>
             </tr>
           </tbody>
