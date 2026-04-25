@@ -19,9 +19,11 @@ interface SchedulerPluginInfo {
 interface Props {
   pluginId: string;
   onRun?: () => void;
+  // true 면 cron/enable UI 숨기고 "실행" 버튼 + 마지막 실행 요약만 표시.
+  manualOnly?: boolean;
 }
 
-export function ScheduleSettingsCard({ pluginId, onRun }: Props) {
+export function ScheduleSettingsCard({ pluginId, onRun, manualOnly = false }: Props) {
   const api = useApi();
   const [info, setInfo] = useState<SchedulerPluginInfo | null>(null);
   const [cronDraft, setCronDraft] = useState('');
@@ -76,6 +78,42 @@ export function ScheduleSettingsCard({ pluginId, onRun }: Props) {
     return (
       <div className="bg-surface border border-border rounded-xl p-5 text-sm text-muted">
         {error ?? '스케줄 정보 로딩 중...'}
+      </div>
+    );
+  }
+
+  if (manualOnly) {
+    return (
+      <div className="bg-surface border border-border rounded-xl p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-xs text-muted flex-1 min-w-0">
+            {info.lastRun ? (
+              <>
+                <div>마지막 실행:</div>
+                <div
+                  className={
+                    info.lastRun.status === 'success' ? 'text-success' : 'text-danger'
+                  }
+                >
+                  {info.lastRun.status === 'success' ? '✅' : '❌'} {info.lastRun.summary}
+                </div>
+                <div className="text-[10px] mt-1">
+                  {new Date(info.lastRun.startedAt).toLocaleString()}
+                </div>
+              </>
+            ) : (
+              '실행 이력 없음'
+            )}
+          </div>
+          <button
+            className="px-4 py-2 bg-accent text-white rounded font-bold disabled:opacity-50 whitespace-nowrap"
+            disabled={running}
+            onClick={runNow}
+          >
+            {running ? '실행 중...' : '▶ 지금 실행'}
+          </button>
+        </div>
+        {error && <div className="text-danger text-xs pt-3">{error}</div>}
       </div>
     );
   }

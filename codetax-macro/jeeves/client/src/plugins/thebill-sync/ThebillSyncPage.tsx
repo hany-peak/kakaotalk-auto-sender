@@ -69,7 +69,7 @@ export function ThebillSyncPage({ pluginId: PLUGIN_ID, title, description }: Pro
         <p className="text-sm text-muted mt-1">{description}</p>
       </div>
 
-      <ScheduleSettingsCard pluginId={PLUGIN_ID} onRun={loadHistory} />
+      <ScheduleSettingsCard pluginId={PLUGIN_ID} onRun={loadHistory} manualOnly />
 
       <div className="bg-surface border border-border rounded-xl p-5">
         <h3 className="font-bold text-sm mb-3">최근 실행 이력 (최근 {history.length}건)</h3>
