@@ -15,8 +15,6 @@ export interface PaymentReminderConfig {
   statusField: string;
   nameField: string;
   bankAccount: string;
-  slackBotToken: string;
-  slackChannel: string;
 }
 
 export class PaymentReminderConfigError extends Error {
@@ -36,8 +34,6 @@ export function loadConfig(): PaymentReminderConfig {
     statusField: process.env.AIRTABLE_FEE_STATUS_FIELD ?? '출금상태',
     nameField: process.env.AIRTABLE_FEE_NAME_FIELD ?? '거래처명',
     bankAccount: process.env.PAYMENT_REMINDER_BANK_ACCOUNT ?? '카카오뱅크 / 3333367093297',
-    slackBotToken: process.env.SLACK_BOT_TOKEN,
-    slackChannel: process.env.SLACK_CHANNEL,
   };
   const missing = Object.entries(required)
     .filter(([, v]) => !v)
