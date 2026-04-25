@@ -22,8 +22,13 @@ function mostRecentMonth25(now: Date): Date {
 
 function computePeriod(mode: RunMode, now: Date = new Date()): { from: Date; to: Date } {
   if (mode === 'withdrawal') {
+    // 25일(주말이면 직전 영업일) 기준 ±5 영업일.
+    // 출금 등록(D-N), 실행(D), 결과 반영(D+N) 모든 단계 포함.
     const target = adjustToBusinessDay(nthOfThisMonth(25, now), 'backward');
-    return { from: target, to: target };
+    return {
+      from: addBusinessDays(target, -5),
+      to: addBusinessDays(target, 5),
+    };
   }
   // reWithdrawal: 가장 최근 25일을 기준으로 retry window 산출.
   const ref25 = mostRecentMonth25(now);
