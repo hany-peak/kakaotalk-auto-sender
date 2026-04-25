@@ -1,6 +1,9 @@
 import * as React from 'react';
+import * as path from 'node:path';
 import { PageFrame } from './shared/PageFrame';
 import type { TemplateProps } from './shared/TemplateProps';
+
+const STAMP_URL = `file://${path.join(__dirname, '..', 'assets', 'stamp.png')}`;
 
 const clauseTitle: React.CSSProperties = {
   fontWeight: 700,
@@ -193,7 +196,32 @@ export function ContractMain2({ record }: TemplateProps) {
             <td style={{ padding: '4mm 0 2mm', textAlign: 'center' }}>
               코드세무회계 본점 대표 세무사 정주희
             </td>
-            <td style={{ width: '30mm', padding: '4mm 0 2mm', textAlign: 'center' }}>(인/서명)</td>
+            <td
+              style={{
+                width: '30mm',
+                padding: '4mm 0 2mm',
+                textAlign: 'center',
+                position: 'relative',
+                verticalAlign: 'middle',
+              }}
+            >
+              <span style={{ position: 'relative', display: 'inline-block' }}>
+                (인/서명)
+                <img
+                  src={STAMP_URL}
+                  alt="stamp"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: '15mm',
+                    height: '15mm',
+                    transform: 'translate(-50%, -50%)',
+                    opacity: 0.85,
+                  }}
+                />
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
