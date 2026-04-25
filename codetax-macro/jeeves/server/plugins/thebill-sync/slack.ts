@@ -18,7 +18,7 @@ function client(): { web: WebClient; channel: string } | null {
 
 export async function notifySuccess(result: SyncResult, durationMs: number): Promise<void> {
   const c = client();
-  if (!c) return; // SLACK_BOT_TOKEN 미설정 — 알림 skip, 동기화 자체는 계속
+  if (!c) return; // RECEIVABLES_SLACK_BOT_TOKEN 미설정 — 알림 skip, 동기화 자체는 계속
   const sec = Math.round(durationMs / 1000);
   const text =
     `✅ thebill-sync 완료 — 총 ${result.total}건 ` +

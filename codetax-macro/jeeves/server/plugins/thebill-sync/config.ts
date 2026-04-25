@@ -54,8 +54,8 @@ export function loadConfig(): ThebillConfig {
       'airtableFeeViewName' | 'slackBotToken' | 'slackChannel'
     >),
     airtableFeeViewName: process.env.AIRTABLE_FEE_VIEW_NAME ?? '',
-    slackBotToken: process.env.SLACK_BOT_TOKEN || undefined,
-    slackChannel: process.env.SLACK_CHANNEL || undefined,
+    slackBotToken: process.env.RECEIVABLES_SLACK_BOT_TOKEN || undefined,
+    slackChannel: process.env.RECEIVABLES_SLACK_CHANNEL || undefined,
   };
 }
 
