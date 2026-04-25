@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, Browser, BrowserContext, Page, Download } from 'playwright';
 import type { ServerContext } from '../types';
 import { loadConfig, STATE_FILE } from './config';
 
@@ -103,9 +103,47 @@ async function navigateAndDownload(
   }
 
   ctx.log('[thebill-sync] downloading excel...');
-  const downloadPromise = page.waitForEvent('download', { timeout: 60_000 });
-  await page.locator('input[type="button"][value="엑셀다운로드"]').first().click({ timeout: 5_000 });
-  const download = await downloadPromise;
+
+  // Auto-accept any confirm/alert dialogs that 더빌 may show before download.
+  page.on('dialog', (dialog) => {
+    ctx.log(`[thebill-sync] dialog ${dialog.type()}: "${dialog.message()}"`);
+    dialog.accept().catch(() => {});
+  });
+
+  // [엑셀다운로드] 버튼이 popup/새 창을 열 수도 있어 main page + popup 모두에서
+  // download 이벤트 listen. 어느 쪽이든 먼저 발생하면 resolve.
+  let resolveDownload!: (d: Download) => void;
+  const downloadPromise = new Promise<Download>((resolve) => {
+    resolveDownload = resolve;
+  });
+  page.on('download', (d) => resolveDownload(d));
+  page.on('popup', (popup) => {
+    ctx.log(`[thebill-sync] popup opened: ${popup.url()}`);
+    popup.on('download', (d) => resolveDownload(d));
+  });
+
+  await page
+    .locator('input[type="button"][value="엑셀다운로드"]')
+    .first()
+    .click({ timeout: 5_000 });
+
+  const TIMEOUT_MS = 60_000;
+  const timeoutErr = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error(`download timeout (${TIMEOUT_MS}ms) — no download/popup observed`)),
+      TIMEOUT_MS,
+    ),
+  );
+
+  const download = await Promise.race([downloadPromise, timeoutErr]).catch(async (err) => {
+    // 진단: 다운로드 실패 시 현재 페이지 스크린샷.
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const shotPath = `/tmp/thebill-download-fail-${opts.mode}-${ts}.png`;
+    await page.screenshot({ path: shotPath, fullPage: true }).catch(() => {});
+    ctx.log(`[thebill-sync] download fail screenshot: ${shotPath}`);
+    ctx.log(`[thebill-sync] page URL at fail: ${page.url()}`);
+    throw err;
+  });
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
   const savePath = path.join(os.tmpdir(), `thebill_${opts.mode}_${ts}.xlsx`);
@@ -123,7 +161,9 @@ export async function downloadResult(
   let browser: Browser | null = null;
   let context: BrowserContext | null = null;
   try {
-    browser = await chromium.launch({ headless: true });
+    // THEBILL_HEADLESS=0 으로 헤드 모드 토글 (헤드리스 감지 차단 의심 시 진단용).
+    const headless = process.env.THEBILL_HEADLESS !== '0';
+    browser = await chromium.launch({ headless });
     const contextOpts = fs.existsSync(STATE_FILE) ? { storageState: STATE_FILE } : {};
     context = await browser.newContext({ acceptDownloads: true, ...contextOpts });
     const page = await context.newPage();
