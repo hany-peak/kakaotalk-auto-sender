@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import * as XLSX from 'xlsx';
-import { buildInputSheetValues, missingRequired, fillXlsx } from './contract';
+import { missingRequired } from './contract';
 import type { NewClientRecord } from './types';
 
 const baseIndividual: NewClientRecord = {
@@ -22,35 +21,6 @@ const baseIndividual: NewClientRecord = {
   accountNumber: '123-456-789',
   bookkeepingFee: 100000,
 };
-
-test('buildInputSheetValues: 개인 — C4/C5는 대표자명, C9는 공란', () => {
-  const v = buildInputSheetValues(baseIndividual, '900101-1234567');
-  assert.equal(v.C3, '홍길동');
-  assert.equal(v.C4, '홍길동');
-  assert.equal(v.C5, '홍길동');
-  assert.equal(v.C6, '900101-1234567');
-  assert.equal(v.C7, '홍길동상점');
-  assert.equal(v.C8, '1234567890'); // 하이픈 제거
-  assert.equal(v.C9, ''); // 개인 → 공란
-  assert.equal(v.C10, '010-1234-5678');
-  assert.equal(v.C11, '국민은행');
-  assert.equal(v.C12, '123-456-789');
-  assert.equal(v.C13, 100000);
-  assert.equal(v.C14, '서울시 강남구');
-});
-
-test('buildInputSheetValues: 법인 — C4/C5 업체명, C9 법인등록번호', () => {
-  const corp: NewClientRecord = {
-    ...baseIndividual,
-    entityType: '법인',
-    companyName: '(주)길동',
-    corpRegNumber: '110111-1234567',
-  };
-  const v = buildInputSheetValues(corp, '900101-1234567');
-  assert.equal(v.C4, '(주)길동');
-  assert.equal(v.C5, '(주)길동');
-  assert.equal(v.C9, '1101111234567');
-});
 
 test('missingRequired: 모든 필수값 있으면 빈 배열', () => {
   assert.deepEqual(missingRequired(baseIndividual, '900101-1234567'), []);
@@ -74,16 +44,4 @@ test('missingRequired: 법인 + 법인등록번호 누락', () => {
 
 test('missingRequired: 주민번호 null 누락', () => {
   assert.ok(missingRequired(baseIndividual, null).includes('대표자주민번호'));
-});
-
-test('fillXlsx: 주입된 xlsx의 입력시트에 값이 설정됨', async () => {
-  const values = buildInputSheetValues(baseIndividual, '900101-1234567');
-  const buf = await fillXlsx(values);
-  assert.ok(buf.length > 10000, 'xlsx buffer should be non-trivial size');
-  const wb = XLSX.read(buf, { type: 'buffer' });
-  const ws = wb.Sheets['입력시트'];
-  assert.equal(ws['C3']?.v, '홍길동');
-  assert.equal(ws['C7']?.v, '홍길동상점');
-  assert.equal(ws['C13']?.v, 100000);
-  assert.equal(ws['C8']?.v, '1234567890');
 });

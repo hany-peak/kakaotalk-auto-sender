@@ -7,7 +7,7 @@
     "dev": "tsx watch index.ts",
     "start": "tsx index.ts",
     "build": "tsc",
-    "test": "tsx --test plugins/**/*.test.ts",
+    "test": "find plugins -name '*.test.ts' -print0 | xargs -0 tsx --test",
     "install:browser": "npx playwright install chromium"
   },
   "dependencies": {
