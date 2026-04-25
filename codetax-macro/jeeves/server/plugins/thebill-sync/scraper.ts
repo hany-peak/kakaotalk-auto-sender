@@ -142,18 +142,26 @@ async function navigateAndDownload(
     if ((await workTypeSelect.count()) > 0) {
       const optionTexts = await workTypeSelect.locator('option').allTextContents();
       ctx.log(`[thebill-sync] 작업내용 옵션: [${optionTexts.join(' | ')}]`);
-      await workTypeSelect.selectOption({ index: 1 }).catch((e) => {
-        ctx.log(`[thebill-sync] 작업내용 selectOption(index:1) 실패: ${e.message}`);
+      // "기타" 우선, 없으면 첫 비-선택하세요 옵션 (index 1).
+      const etcIdx = optionTexts.findIndex((t) => t.trim() === '기타');
+      const targetIdx = etcIdx >= 0 ? etcIdx : 1;
+      await workTypeSelect.selectOption({ index: targetIdx }).catch((e) => {
+        ctx.log(`[thebill-sync] 작업내용 selectOption(index:${targetIdx}) 실패: ${e.message}`);
       });
+      ctx.log(
+        `[thebill-sync] 작업내용 → "${optionTexts[targetIdx] ?? '?'}" (index ${targetIdx})`,
+      );
     } else {
       ctx.log('[thebill-sync] 작업내용 select 못 찾음 — 모달 구조 변경 의심');
     }
 
-    // 작업내용 옆 텍스트 input 도 채움 (있으면). 있을 수도 없을 수도.
+    // 작업내용 옆 텍스트 input — 빈값이면 등록 시 거부됨, "확인" 같은 사유 텍스트 필수.
     const workTypeNote = page
       .locator('text=작업내용')
       .locator('xpath=following::input[@type="text"][1]');
-    await workTypeNote.fill('자동 동기화').catch(() => {});
+    await workTypeNote.fill('확인').catch((e) => {
+      ctx.log(`[thebill-sync] 작업내용 사유 텍스트 입력 실패: ${e.message}`);
+    });
 
     // [등록] 버튼 클릭.
     await page
