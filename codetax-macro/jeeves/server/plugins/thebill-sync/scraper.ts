@@ -128,28 +128,40 @@ async function navigateAndDownload(
     .click({ timeout: 5_000 });
 
   // 더빌은 [엑셀다운로드] 클릭 후 "엑셀다운로드 이력 등록" 모달을 띄움.
-  // 작업내용 select 첫 옵션 선택 후 [등록] 클릭해야 실제 다운로드 시작.
+  // 작업내용 select 의 진짜 옵션 선택 + (있으면) 텍스트 사유 입력 후 [등록] 클릭해야 실제 다운로드.
   try {
     await page
       .locator('text=엑셀다운로드 이력 등록')
       .waitFor({ state: 'visible', timeout: 10_000 });
-    ctx.log('[thebill-sync] 다운로드 이력 등록 모달 감지 — 작업내용 선택 + 등록');
+    ctx.log('[thebill-sync] 다운로드 이력 등록 모달 감지');
 
-    // 모달의 select (visible 한 것 중 마지막 = 가장 최근 등장) 의 첫 진짜 옵션 선택.
-    const modalSelect = page.locator('select:visible').last();
-    if ((await modalSelect.count()) > 0) {
-      await modalSelect.selectOption({ index: 1 }).catch((e) => {
-        ctx.log(`[thebill-sync] 작업내용 select 실패 (계속 진행): ${e.message}`);
+    // "작업내용" 라벨 바로 다음에 오는 첫 select 를 정확히 타겟팅 (페이지 다른 select 와 충돌 회피).
+    const workTypeSelect = page
+      .locator('text=작업내용')
+      .locator('xpath=following::select[1]');
+    if ((await workTypeSelect.count()) > 0) {
+      const optionTexts = await workTypeSelect.locator('option').allTextContents();
+      ctx.log(`[thebill-sync] 작업내용 옵션: [${optionTexts.join(' | ')}]`);
+      await workTypeSelect.selectOption({ index: 1 }).catch((e) => {
+        ctx.log(`[thebill-sync] 작업내용 selectOption(index:1) 실패: ${e.message}`);
       });
+    } else {
+      ctx.log('[thebill-sync] 작업내용 select 못 찾음 — 모달 구조 변경 의심');
     }
 
-    // [등록] 버튼 클릭. modal context 에서 visible 한 등록 버튼 첫 번째.
+    // 작업내용 옆 텍스트 input 도 채움 (있으면). 있을 수도 없을 수도.
+    const workTypeNote = page
+      .locator('text=작업내용')
+      .locator('xpath=following::input[@type="text"][1]');
+    await workTypeNote.fill('자동 동기화').catch(() => {});
+
+    // [등록] 버튼 클릭.
     await page
       .locator('input[type="button"][value="등록"]:visible, button:visible:has-text("등록")')
       .first()
       .click({ timeout: 5_000 });
+    ctx.log('[thebill-sync] 모달 [등록] 클릭 완료 — 다운로드 대기');
   } catch (e: any) {
-    // 모달이 안 뜨는 케이스 (이미 다운로드가 직접 시작됐을 수도) — 진단 로그만 남기고 계속.
     ctx.log(`[thebill-sync] 다운로드 모달 처리 skip: ${e.message}`);
   }
 
