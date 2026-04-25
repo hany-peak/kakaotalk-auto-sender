@@ -1,7 +1,7 @@
 import type { MacroPagePlugin } from './types';
 import { vatNoticePlugin } from './vat-notice';
 import { kakaoSendPlugin } from './kakao-send';
-import { thebillSyncPlugin } from './thebill-sync';
+import { thebillWithdrawalPlugin, thebillReWithdrawalPlugin } from './thebill-sync';
 import { newClientPlugin } from './new-client';
 
 function PlaceholderPage() {
@@ -11,7 +11,8 @@ function PlaceholderPage() {
 export const plugins: MacroPagePlugin[] = [
   vatNoticePlugin,
   kakaoSendPlugin,
-  thebillSyncPlugin,
+  thebillWithdrawalPlugin,
+  thebillReWithdrawalPlugin,
   newClientPlugin,
   {
     id: 'income-tax',

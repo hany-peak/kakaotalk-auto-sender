@@ -20,9 +20,13 @@ interface LogEntry {
   message: string;
 }
 
-const PLUGIN_ID = 'thebill-sync';
+interface Props {
+  pluginId: string;
+  title: string;
+  description: string;
+}
 
-export function ThebillSyncPage() {
+export function ThebillSyncPage({ pluginId: PLUGIN_ID, title, description }: Props) {
   const api = useApi();
   const [history, setHistory] = useState<RunResult[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -61,10 +65,8 @@ export function ThebillSyncPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h2 className="text-lg font-bold">📊 매월 미납 금액 슬랙 자동 전송</h2>
-        <p className="text-sm text-muted mt-1">
-          더빌 CMS → 엑셀 파싱 → Airtable 업데이트 → 슬랙 알림 자동 파이프라인
-        </p>
+        <h2 className="text-lg font-bold">{title}</h2>
+        <p className="text-sm text-muted mt-1">{description}</p>
       </div>
 
       <ScheduleSettingsCard pluginId={PLUGIN_ID} onRun={loadHistory} />
