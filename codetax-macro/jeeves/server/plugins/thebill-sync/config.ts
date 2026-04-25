@@ -19,8 +19,9 @@ export interface ThebillConfig {
   airtableFeeNameField: string;
   // 빈 문자열이면 동적 [N월] 뷰. 명시되면 그 뷰를 항상 사용 (scope-무관 뷰 권장).
   airtableFeeViewName: string;
-  slackBotToken: string;
-  slackChannel: string;
+  // Slack 알림은 optional — 비어있으면 알림만 skip, 동기화는 계속 진행.
+  slackBotToken?: string;
+  slackChannel?: string;
 }
 
 export class ThebillConfigError extends Error {
@@ -42,16 +43,19 @@ export function loadConfig(): ThebillConfig {
     airtableFeeAmountField: process.env.AIRTABLE_FEE_AMOUNT_FIELD ?? '기장료',
     airtableFeeStatusField: process.env.AIRTABLE_FEE_STATUS_FIELD ?? '출금상태',
     airtableFeeNameField: process.env.AIRTABLE_FEE_NAME_FIELD ?? '거래처명',
-    slackBotToken: process.env.SLACK_BOT_TOKEN,
-    slackChannel: process.env.SLACK_CHANNEL,
   };
   const missing = Object.entries(required)
     .filter(([, v]) => !v)
     .map(([k]) => k);
   if (missing.length > 0) throw new ThebillConfigError(missing);
   return {
-    ...(required as Omit<ThebillConfig, 'airtableFeeViewName'>),
+    ...(required as Omit<
+      ThebillConfig,
+      'airtableFeeViewName' | 'slackBotToken' | 'slackChannel'
+    >),
     airtableFeeViewName: process.env.AIRTABLE_FEE_VIEW_NAME ?? '',
+    slackBotToken: process.env.SLACK_BOT_TOKEN || undefined,
+    slackChannel: process.env.SLACK_CHANNEL || undefined,
   };
 }
 
