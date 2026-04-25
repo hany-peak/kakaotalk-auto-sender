@@ -45,7 +45,7 @@ export async function sendBatch(
           },
         ],
         input.message,
-        [],
+        '',
         isStopped,
         log,
         () => {},
