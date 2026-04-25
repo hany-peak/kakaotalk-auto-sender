@@ -59,15 +59,20 @@ export async function run(
     ctx.log(`[thebill-sync] parsed ${rows.length} rows`);
 
     stage = 'airtable';
-    const updateResult = await airtable.updateFeeTable(rows, opts.mode);
+    const updateResult = await airtable.updateFeeTable(rows, opts.mode, undefined, ctx.log);
+    ctx.log(
+      `[thebill-sync] airtable 완료 — 성공 ${updateResult.successUpdated} / 실패 ${updateResult.failureUpdated} / 스킵 ${updateResult.skipped} / 매칭실패 ${updateResult.unmatched.length} / 에러 ${updateResult.errors.length}`,
+    );
 
     const durationMs = Date.now() - start;
     stage = 'slack';
+    ctx.log('[thebill-sync] slack 알림 발송...');
     await slack.notifyUnpaidSummary(
       updateResult.failureRows,
       updateResult.total,
       durationMs,
     );
+    ctx.log('[thebill-sync] slack 완료');
 
     return {
       status: 'success',
