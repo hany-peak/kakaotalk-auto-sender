@@ -285,15 +285,7 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       const record = bodyOpenDate !== '' ? { ...base, openDate: bodyOpenDate } : base;
       ctx.log(`[new-client] wehago register: id=${req.params.id} openDate=${record.openDate ?? '(none)'} (body=${bodyOpenDate || '-'}, base=${base.openDate ?? '-'})`);
 
-      // 대표자 주민번호는 민감정보 — NewClientRecord 에 싣지 않고 여기서만 별도
-      // fetch. 값은 registerWehagoClient 내부에서 WEHAGO 입력에만 사용되고,
-      // 클라이언트로 전달되는 응답에는 포함되지 않는다.
-      const airtableId = isAirtableId(req.params.id)
-        ? req.params.id
-        : base.airtableRecordId ?? null;
-      const repRrn = airtableId ? await fetchRepRrn(airtableId, cfg, ctx.logError, ctx.log) : null;
-
-      const out = await registerWehagoClient(record, creds, ctx.log, { repRrn });
+      const out = await registerWehagoClient(record, creds, ctx.log);
 
       // Mark checklist done. For local records, persist; for Airtable records,
       // reverse-sync the 위하고 checkbox via existing mapping.
