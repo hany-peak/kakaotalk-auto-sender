@@ -4,6 +4,7 @@ import { kakaoSendPlugin } from './kakao-send';
 import { thebillSyncPlugin } from './thebill-sync';
 import { newClientPlugin } from './new-client';
 import { paymentReminderPlugin } from './payment-reminder';
+import { receivablesPlugin } from './receivables';
 
 function PlaceholderPage() {
   return <div className="text-muted">준비 중...</div>;
@@ -15,6 +16,7 @@ export const plugins: MacroPagePlugin[] = [
   thebillSyncPlugin,
   newClientPlugin,
   paymentReminderPlugin,
+  receivablesPlugin,
   {
     id: 'income-tax',
     name: '소득세 집계',

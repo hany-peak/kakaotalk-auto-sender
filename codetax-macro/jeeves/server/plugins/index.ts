@@ -5,6 +5,7 @@ import { messagesPlugin } from './messages';
 import { thebillWithdrawalPlugin, thebillReWithdrawalPlugin } from './thebill-sync';
 import { newClientPlugin } from './new-client';
 import { paymentReminderPlugin } from './payment-reminder';
+import { receivablesPlugin } from './receivables';
 
 export const plugins: MacroPlugin[] = [
   vatNoticePlugin,
@@ -14,4 +15,5 @@ export const plugins: MacroPlugin[] = [
   thebillReWithdrawalPlugin,
   newClientPlugin,
   paymentReminderPlugin,
+  receivablesPlugin,
 ];
