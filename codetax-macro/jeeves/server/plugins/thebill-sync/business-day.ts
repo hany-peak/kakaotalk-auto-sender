@@ -1,5 +1,15 @@
 import { isHoliday } from './holidays';
 
+/**
+ * 오늘 기준 가장 최근의 25일 (=가장 최근 출금 cycle reference).
+ * 오늘이 25일 이전이면 전월 25일 반환 (cycle 이 한 달 전 25일에 시작했으므로).
+ */
+export function mostRecentMonth25(now: Date = new Date()): Date {
+  const this25 = new Date(now.getFullYear(), now.getMonth(), 25);
+  if (now >= this25) return this25;
+  return new Date(now.getFullYear(), now.getMonth() - 1, 25);
+}
+
 export function isBusinessDay(d: Date): boolean {
   const day = d.getDay();
   if (day === 0 || day === 6) return false; // Sun, Sat

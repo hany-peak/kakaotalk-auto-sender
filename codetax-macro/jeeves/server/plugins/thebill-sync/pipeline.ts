@@ -3,21 +3,12 @@ import * as scraper from './scraper';
 import * as parser from './parser';
 import * as airtable from './airtable';
 import * as slack from './slack';
-import { adjustToBusinessDay, addBusinessDays } from './business-day';
+import { adjustToBusinessDay, addBusinessDays, mostRecentMonth25 } from './business-day';
 
 export type RunMode = 'withdrawal' | 'reWithdrawal';
 
 function nthOfThisMonth(n: number, now: Date = new Date()): Date {
   return new Date(now.getFullYear(), now.getMonth(), n);
-}
-
-// 오늘 기준 가장 최근의 25일. 오늘이 25일 이전이면 전월 25일.
-// reWithdrawal 의 retry window 가 월 경계를 가로질러도 (예: 4/25 → 5/7)
-// 정확한 reference 25일 을 잡기 위함.
-function mostRecentMonth25(now: Date): Date {
-  const this25 = new Date(now.getFullYear(), now.getMonth(), 25);
-  if (now >= this25) return this25;
-  return new Date(now.getFullYear(), now.getMonth() - 1, 25);
 }
 
 function computePeriod(mode: RunMode, now: Date = new Date()): { from: Date; to: Date } {

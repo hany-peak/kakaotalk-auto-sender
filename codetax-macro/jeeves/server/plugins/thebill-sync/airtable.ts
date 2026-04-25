@@ -1,6 +1,7 @@
 import Airtable from 'airtable';
 import { loadConfig, type ThebillConfig } from './config';
 import { classifyStatus, normalizeBizNo, type ThebillRow, type StatusClass } from './parser';
+import { mostRecentMonth25 } from './business-day';
 import type { ScrapeMode } from './scraper';
 
 export interface UpdateResult {
@@ -28,8 +29,12 @@ function escapeFormula(s: string): string {
   return s.replace(/'/g, "\\'");
 }
 
-function currentMonthView(): string {
-  const m = String(new Date().getMonth() + 1);
+/**
+ * 현재 cycle 의 monthly view 이름. system month 가 아닌 가장 최근 25일의 month 사용.
+ * 예: 5월 1일에 동기화 실행해도 4월 cycle (4/25 출금) 결과를 받으므로 [4월] view 매칭.
+ */
+function currentCycleView(now: Date = new Date()): string {
+  const m = mostRecentMonth25(now).getMonth() + 1;
   return `[${m}월] 세금계산서 및 입금현황`;
 }
 
@@ -41,7 +46,7 @@ export async function updateFeeTable(
   const cfg = cfgOverride ?? loadConfig();
   const base = new Airtable({ apiKey: cfg.airtableFeePat }).base(cfg.airtableFeeBaseId);
   const table = base(cfg.airtableFeeTableId);
-  const view = cfg.airtableFeeViewName || currentMonthView();
+  const view = cfg.airtableFeeViewName || currentCycleView();
 
   const result: UpdateResult = {
     total: rows.length,
@@ -58,11 +63,13 @@ export async function updateFeeTable(
 
     const bizNo = normalizeBizNo(row.bizNo);
     try {
+      // Airtable 의 사업자번호 컬럼이 하이픈(`150-36-00401`) / 공백 / 숫자만 어느 형식이든
+      // 매칭되도록 SUBSTITUTE 로 server-side 정규화 후 비교.
       const records = await table
         .select({
           view,
           maxRecords: 1,
-          filterByFormula: `{${cfg.airtableFeeBizNoField}}='${escapeFormula(bizNo)}'`,
+          filterByFormula: `SUBSTITUTE(SUBSTITUTE({${cfg.airtableFeeBizNoField}},'-',''),' ','')='${escapeFormula(bizNo)}'`,
         })
         .firstPage();
 
