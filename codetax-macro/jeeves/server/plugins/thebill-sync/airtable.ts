@@ -12,14 +12,16 @@ export interface UpdateResult {
   errors: { bizNo: string; error: string }[];
 }
 
+/**
+ * 더빌 status → Airtable 출금상태 매핑.
+ * success 만 '출금성공', 그 외(failure/unknown 모두)는 '출금실패' 로 통일.
+ * mode 는 현재 사용되지 않지만, 향후 mode 별 분리 매핑 필요 시 유지.
+ */
 export function decideStatus(
   cls: StatusClass,
-  mode: ScrapeMode,
-): string | null {
-  if (cls === 'unknown') return null;
-  if (cls === 'success') return '출금성공';
-  // failure
-  return mode === 'withdrawal' ? '자동재출금' : '출금실패';
+  _mode: ScrapeMode,
+): string {
+  return cls === 'success' ? '출금성공' : '출금실패';
 }
 
 function escapeFormula(s: string): string {
@@ -69,20 +71,28 @@ export async function updateFeeTable(
         continue;
       }
 
-      // 비고: success 면 비움 (정상화), 그 외 (failure/unknown) 면 더빌 raw status 그대로.
-      // 출금상태: success/failure 만 변경, unknown 은 그대로 둠 (출금중 등 진행 중 상태 보존).
-      const updates: Record<string, string> = {
-        [cfg.airtableFeeRemarkField]: cls === 'success' ? '' : row.status,
-      };
-      if (newStatus !== null) {
-        updates[cfg.airtableFeeStatusField] = newStatus;
+      const record = records[0];
+      const currentStatus = String(
+        record.get(cfg.airtableFeeStatusField) ?? '',
+      ).trim();
+
+      // 안전장치: 이미 '출금성공' 인 row 는 재업데이트 안 함 (수동 확인 또는 이전 cycle 보존).
+      if (currentStatus === '출금성공') {
+        result.skipped += 1;
+        continue;
       }
 
-      await table.update(records[0].id, updates);
+      // 비고: success 면 비움, 그 외 (failure/unknown) 는 더빌 raw status 그대로.
+      // 출금상태: success → '출금성공', 그 외 (failure/unknown 모두) → '출금실패'.
+      const updates: Record<string, string> = {
+        [cfg.airtableFeeStatusField]: newStatus,
+        [cfg.airtableFeeRemarkField]: cls === 'success' ? '' : row.status,
+      };
+
+      await table.update(record.id, updates);
 
       if (cls === 'success') result.successUpdated += 1;
-      else if (cls === 'failure') result.failureUpdated += 1;
-      else result.skipped += 1; // unknown — 비고만 갱신, 출금상태 보존
+      else result.failureUpdated += 1;
     } catch (err) {
       result.errors.push({
         bizNo,
