@@ -128,47 +128,49 @@ async function navigateAndDownload(
     .click({ timeout: 5_000 });
 
   // 더빌은 [엑셀다운로드] 클릭 후 "엑셀다운로드 이력 등록" 모달을 띄움.
-  // 작업내용 select 의 진짜 옵션 선택 + (있으면) 텍스트 사유 입력 후 [등록] 클릭해야 실제 다운로드.
+  // 작업내용 select 에서 "기타" 선택 + 옆 텍스트 input 에 사유 입력 후 [등록].
   try {
     await page
       .locator('text=엑셀다운로드 이력 등록')
       .waitFor({ state: 'visible', timeout: 10_000 });
     ctx.log('[thebill-sync] 다운로드 이력 등록 모달 감지');
 
-    // "작업내용" 라벨 바로 다음에 오는 첫 select 를 정확히 타겟팅 (페이지 다른 select 와 충돌 회피).
-    const workTypeSelect = page
-      .locator('text=작업내용')
-      .locator('xpath=following::select[1]');
-    if ((await workTypeSelect.count()) > 0) {
-      const optionTexts = await workTypeSelect.locator('option').allTextContents();
-      ctx.log(`[thebill-sync] 작업내용 옵션: [${optionTexts.join(' | ')}]`);
-      // "기타" 우선, 없으면 첫 비-선택하세요 옵션 (index 1).
-      const etcIdx = optionTexts.findIndex((t) => t.trim() === '기타');
-      const targetIdx = etcIdx >= 0 ? etcIdx : 1;
-      await workTypeSelect.selectOption({ index: targetIdx }).catch((e) => {
-        ctx.log(`[thebill-sync] 작업내용 selectOption(index:${targetIdx}) 실패: ${e.message}`);
-      });
-      ctx.log(
-        `[thebill-sync] 작업내용 → "${optionTexts[targetIdx] ?? '?'}" (index ${targetIdx})`,
-      );
-    } else {
-      ctx.log('[thebill-sync] 작업내용 select 못 찾음 — 모달 구조 변경 의심');
-    }
+    // heading 의 가장 가까운 select 포함 ancestor = 모달 컨테이너.
+    const modal = page
+      .locator('text=엑셀다운로드 이력 등록')
+      .locator('xpath=ancestor::*[.//select][1]');
+    const modalCount = await modal.count();
+    ctx.log(`[thebill-sync] 모달 컨테이너 매칭: ${modalCount}`);
 
-    // 작업내용 옆 텍스트 input — 빈값이면 등록 시 거부됨, "확인" 같은 사유 텍스트 필수.
-    const workTypeNote = page
-      .locator('text=작업내용')
-      .locator('xpath=following::input[@type="text"][1]');
-    await workTypeNote.fill('확인').catch((e) => {
-      ctx.log(`[thebill-sync] 작업내용 사유 텍스트 입력 실패: ${e.message}`);
+    const scope = modalCount > 0 ? modal : page; // fallback: page-wide
+
+    // 작업내용 select — 모달 안 첫 select.
+    const workTypeSelect = scope.locator('select').first();
+    const optionTexts = await workTypeSelect.locator('option').allTextContents();
+    ctx.log(`[thebill-sync] 작업내용 옵션: [${optionTexts.join(' | ')}]`);
+
+    const etcIdx = optionTexts.findIndex((t) => t.trim() === '기타');
+    const targetIdx = etcIdx >= 0 ? etcIdx : 1;
+    await workTypeSelect.selectOption({ index: targetIdx }).catch((e) => {
+      ctx.log(`[thebill-sync] selectOption(index:${targetIdx}) 실패: ${e.message}`);
     });
+    ctx.log(`[thebill-sync] 작업내용 → "${optionTexts[targetIdx] ?? '?'}" (idx ${targetIdx})`);
 
-    // [등록] 버튼 클릭.
-    await page
-      .locator('input[type="button"][value="등록"]:visible, button:visible:has-text("등록")')
+    // 사유 input — 모달 안 첫 visible text input.
+    await scope
+      .locator('input[type="text"]:visible')
+      .first()
+      .fill('확인')
+      .catch((e) => {
+        ctx.log(`[thebill-sync] 사유 텍스트 입력 실패: ${e.message}`);
+      });
+
+    // [등록] 버튼.
+    await scope
+      .locator('input[type="button"][value="등록"], button:has-text("등록")')
       .first()
       .click({ timeout: 5_000 });
-    ctx.log('[thebill-sync] 모달 [등록] 클릭 완료 — 다운로드 대기');
+    ctx.log('[thebill-sync] 모달 [등록] 클릭 — 다운로드 대기');
   } catch (e: any) {
     ctx.log(`[thebill-sync] 다운로드 모달 처리 skip: ${e.message}`);
   }
