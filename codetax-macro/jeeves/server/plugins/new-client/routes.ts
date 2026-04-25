@@ -24,6 +24,7 @@ import {
 } from './airtable';
 import { missingRequired } from './contract';
 import { BUNDLE_GROUPS, sanitizeFilename, assembleBundle } from './pdf/bundles';
+import { registerPreviewRoutes } from './pdf/preview-routes';
 
 /**
  * RFC 5987 기반 Content-Disposition. 한글 포함 파일명을 안전하게 전달.
@@ -479,4 +480,8 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       return res.status(500).json({ error: 'PDF 생성 실패 — ' + raw.slice(0, 200) });
     }
   });
+
+  if (process.env.NODE_ENV !== 'production') {
+    registerPreviewRoutes(app, ctx, loadConfig);
+  }
 }
