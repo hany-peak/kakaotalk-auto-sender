@@ -22,9 +22,9 @@ import {
   isAirtableId,
   updateAirtableAuxFields,
 } from './airtable';
-import { buildInputSheetValues, missingRequired, fillXlsx } from './contract';
-import { BUNDLE_GROUPS, splitForBundle, renderPdf, sanitizeFilename } from './contract-pdf';
-import * as XLSX from 'xlsx';
+import { missingRequired } from './contract';
+import { BUNDLE_GROUPS, sanitizeFilename, assembleBundle } from './pdf/bundles';
+import { registerPreviewRoutes } from './pdf/preview-routes';
 
 /**
  * RFC 5987 기반 Content-Disposition. 한글 포함 파일명을 안전하게 전달.
@@ -454,15 +454,9 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
   app.get('/api/new-client/:id/contract-download', async (req, res) => {
     const id = req.params.id;
     if (!isAirtableId(id)) return res.status(400).json({ error: 'invalid airtable id' });
-    const format = req.query.format === 'pdf' ? 'pdf' : 'xlsx';
-    const groupId = typeof req.query.group === 'string' ? req.query.group : 'all';
-    const group = groupId === 'all' ? null : BUNDLE_GROUPS.find((g) => g.id === groupId);
-    if (groupId !== 'all' && !group) {
-      return res.status(400).json({ error: `invalid group: ${groupId}` });
-    }
-    if (format === 'pdf' && !group) {
-      return res.status(400).json({ error: 'pdf 포맷은 group 파라미터 필수' });
-    }
+    const groupId = typeof req.query.group === 'string' ? req.query.group : '';
+    const group = BUNDLE_GROUPS.find((g) => g.id === groupId);
+    if (!group) return res.status(400).json({ error: `invalid group: ${groupId}` });
 
     const cfg = loadConfig();
     const record = await fetchAirtableRecord(id, cfg, ctx.logError);
@@ -472,43 +466,22 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     const missing = missingRequired(record, rrn);
     if (missing.length > 0) return res.status(400).json({ missing });
 
-    const values = buildInputSheetValues(record, rrn);
-    const xlsxBuf = await fillXlsx(values);
     const companyTag = sanitizeFilename(record.companyName || 'client');
-    const baseName = group ? `${companyTag}_${group.filename}` : `${companyTag}_기장계약서세트`;
+    const baseName = `${companyTag}_${group.filename}`;
 
-    if (format === 'xlsx') {
-      let outBuf = xlsxBuf;
-      if (group) {
-        const fullWb = XLSX.read(xlsxBuf, { type: 'buffer', cellStyles: true });
-        const groupWb = splitForBundle(fullWb, group);
-        outBuf = XLSX.write(groupWb, { type: 'buffer', bookType: 'xlsx', cellStyles: true }) as Buffer;
-      }
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      res.setHeader('Content-Disposition', contentDisposition(`${baseName}.xlsx`));
-      return res.send(outBuf);
-    }
-
-    // format === 'pdf' (group is guaranteed non-null by check above)
     try {
-      const fullWb = XLSX.read(xlsxBuf, { type: 'buffer', cellStyles: true });
-      const groupWb = splitForBundle(fullWb, group!);
-      const pdf = await renderPdf(groupWb, sanitizeFilename(baseName));
+      const pdf = await assembleBundle(group, record, rrn);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', contentDisposition(`${baseName}.pdf`));
       return res.send(pdf);
     } catch (err: any) {
       ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
       const raw = String(err.message ?? err);
-      const msg = /spawn failed|ENOENT/i.test(raw)
-        ? 'LibreOffice 미설치 — brew install --cask libreoffice'
-        : /timeout/i.test(raw)
-          ? 'PDF 변환 시간 초과'
-          : 'PDF 생성 실패 — ' + raw.slice(0, 200);
-      return res.status(500).json({ error: msg });
+      return res.status(500).json({ error: 'PDF 생성 실패 — ' + raw.slice(0, 200) });
     }
   });
+
+  if (process.env.NODE_ENV !== 'production') {
+    registerPreviewRoutes(app, ctx, loadConfig);
+  }
 }

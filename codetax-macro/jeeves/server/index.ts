@@ -8,6 +8,7 @@ import { plugins } from './plugins';
 import type { ServerContext } from './plugins/types';
 import { BASE_DOWNLOAD_DIR } from './plugins/vat-notice/config';
 import { scheduler } from './scheduler';
+import { initPdfRenderer, closePdfRenderer } from './plugins/new-client/pdf/renderer';
 
 const app = express();
 const PORT = 3001;
@@ -90,10 +91,16 @@ scheduler.initialize(plugins, ctx).catch((err) => {
   logError(`scheduler initialize failed: ${err.message}`);
 });
 
+initPdfRenderer().then(
+  () => log('[pdf] Playwright Chromium ready'),
+  (err) => logError(`[pdf] Chromium launch failed: ${err.message}`),
+);
+
 for (const sig of ['SIGINT', 'SIGTERM'] as const) {
   process.on(sig, async () => {
     await scheduler.shutdown();
     await session.close().catch(() => {});
+    await closePdfRenderer().catch((e) => logError(`pdf close failed: ${e.message}`));
     process.exit(0);
   });
 }

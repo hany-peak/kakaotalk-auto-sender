@@ -6,7 +6,6 @@ interface Props {
 }
 
 type GroupId = 'contract' | 'cms' | 'consent' | 'edi';
-type Format = 'xlsx' | 'pdf';
 
 const DOCUMENTS: Array<{ id: GroupId; label: string }> = [
   { id: 'contract', label: '기장계약서' },
@@ -68,13 +67,13 @@ export function DocumentDownloadPanel({ record }: Props) {
   const disabled = missing.length > 0;
   const title = disabled ? `누락: ${missing.join(', ')}` : '';
 
-  async function onClick(groupId: GroupId, format: Format, label: string) {
+  async function onClick(groupId: GroupId, label: string) {
     setErr(null);
-    setPendingKey(`${groupId}:${format}`);
+    setPendingKey(groupId);
     try {
       await triggerDownload(
-        `/api/new-client/${record.id}/contract-download?format=${format}&group=${groupId}`,
-        `${label}.${format}`,
+        `/api/new-client/${record.id}/contract-download?group=${groupId}`,
+        `${label}.pdf`,
       );
     } catch (e: any) {
       setErr(e.message ?? '다운로드 실패');
@@ -96,21 +95,10 @@ export function DocumentDownloadPanel({ record }: Props) {
                   type="button"
                   disabled={disabled || pendingKey !== null}
                   title={title}
-                  onClick={() => onClick(doc.id, 'xlsx', doc.label)}
+                  onClick={() => onClick(doc.id, doc.label)}
                   className="px-2 py-0.5 rounded text-[11px] border border-border hover:bg-surface2 disabled:opacity-50"
                 >
-                  {pendingKey === `${doc.id}:xlsx` ? '생성 중…' : '엑셀'}
-                </button>
-              </td>
-              <td className="py-1 pr-1.5">
-                <button
-                  type="button"
-                  disabled={disabled || pendingKey !== null}
-                  title={title}
-                  onClick={() => onClick(doc.id, 'pdf', doc.label)}
-                  className="px-2 py-0.5 rounded text-[11px] border border-border hover:bg-surface2 disabled:opacity-50"
-                >
-                  {pendingKey === `${doc.id}:pdf` ? '생성 중…' : 'PDF'}
+                  {pendingKey === doc.id ? '생성 중…' : 'PDF'}
                 </button>
               </td>
             </tr>
