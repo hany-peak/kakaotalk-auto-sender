@@ -30,10 +30,17 @@ status: draft
 
 ## 3. 범위 외 (Out of Scope)
 
-- 입력 워크북(`입력시트`) 자체 — 사용자 편집 워크플로 유지
 - 시각적 회귀(visual regression) CI — v1에서는 머지 전 육안 비교로 충분
 - soffice 페일오버 — 컷오버이므로 폴백 없음
-- `references/sheet.xlsx` — 텍스트/표 기준 자료로 보관 유지
+- `references/sheet.xlsx` — 시각 비교 기준 자료로 보관 유지
+
+## 3.1 추가 결정 (2026-04-25)
+
+xlsx 다운로드 기능 자체를 폐기하고 PDF 만 제공한다.
+- `fillXlsx` 함수 삭제
+- `/contract-download` 의 `format=xlsx` 분기 삭제 (또는 라우트 자체를 `format` 없이 PDF 전용으로 단순화)
+- 클라이언트 `DocumentDownloadPanel` 의 xlsx 버튼 제거
+- `references/sheet.xlsx` 는 시각 참조용으로 보관 (코드에서는 더 이상 read 안 함)
 
 ## 4. 아키텍처
 
@@ -141,10 +148,11 @@ zipFiles([{ name: bundle.filename + '.pdf', data: bundlePdf }, ...])
 - 각 템플릿 단위 테스트: `pdf/templates/*.test.ts` (PDF Buffer 비공백 검증)
 
 ### 수정
-- `routes.ts` — `contract-pdf` import 제거, `pdf/bundles` 사용
-- `contract.ts` — `fillXlsx` 제거 (다른 호출자 없는지 grep 후 확인)
+- `routes.ts` — `contract-pdf` import 제거, `pdf/bundles` 사용. `/contract-download` 는 PDF 전용으로 단순화 (xlsx 분기 제거)
+- `contract.ts` — `fillXlsx`, `InputSheetValues` 의 xlsx 의존 부분 제거. `buildInputSheetValues` / `missingRequired` 는 React 템플릿 props 빌드용으로 유지 (필요 시 함수명/리턴 타입 정리)
 - `package.json` (server) — `pdf-lib`, `react`, `react-dom` 추가
 - `tsconfig.json` (server) — JSX 활성화 (`"jsx": "react-jsx"`)
+- `client/src/plugins/new-client/components/DocumentDownloadPanel.tsx` — xlsx 다운로드 버튼 제거, PDF 버튼만 유지
 
 ### 삭제
 - `jeeves/server/plugins/new-client/contract-pdf.ts`
