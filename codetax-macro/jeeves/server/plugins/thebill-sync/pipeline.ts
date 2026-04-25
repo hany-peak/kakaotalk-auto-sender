@@ -7,18 +7,31 @@ import { adjustToBusinessDay, addBusinessDays } from './business-day';
 
 export type RunMode = 'withdrawal' | 'reWithdrawal';
 
-function nthOfThisMonth(n: number): Date {
-  const now = new Date();
+function nthOfThisMonth(n: number, now: Date = new Date()): Date {
   return new Date(now.getFullYear(), now.getMonth(), n);
 }
 
-function computePeriod(mode: RunMode): { from: Date; to: Date } {
+// 오늘 기준 가장 최근의 25일. 오늘이 25일 이전이면 전월 25일.
+// reWithdrawal 의 retry window 가 월 경계를 가로질러도 (예: 4/25 → 5/7)
+// 정확한 reference 25일 을 잡기 위함.
+function mostRecentMonth25(now: Date): Date {
+  const this25 = new Date(now.getFullYear(), now.getMonth(), 25);
+  if (now >= this25) return this25;
+  return new Date(now.getFullYear(), now.getMonth() - 1, 25);
+}
+
+function computePeriod(mode: RunMode, now: Date = new Date()): { from: Date; to: Date } {
   if (mode === 'withdrawal') {
-    const target = adjustToBusinessDay(nthOfThisMonth(25), 'backward');
+    const target = adjustToBusinessDay(nthOfThisMonth(25, now), 'backward');
     return { from: target, to: target };
   }
-  const start = adjustToBusinessDay(nthOfThisMonth(26), 'forward');
-  const end = addBusinessDays(nthOfThisMonth(25), 8);
+  // reWithdrawal: 가장 최근 25일을 기준으로 retry window 산출.
+  const ref25 = mostRecentMonth25(now);
+  const start = adjustToBusinessDay(
+    new Date(ref25.getFullYear(), ref25.getMonth(), 26),
+    'forward',
+  );
+  const end = addBusinessDays(ref25, 8);
   return { from: start, to: end };
 }
 
