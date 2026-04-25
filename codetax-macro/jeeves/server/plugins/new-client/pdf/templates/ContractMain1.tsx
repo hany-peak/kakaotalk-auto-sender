@@ -50,7 +50,7 @@ const tdSubLabel: React.CSSProperties = {
   textAlign: 'center',
 };
 
-export function ContractMain1({ record }: TemplateProps) {
+export function ContractMain1({ record, rrn }: TemplateProps) {
   const sunim = SUNIM;
   return (
     <PageFrame margin={{ top: '18mm', right: '18mm', bottom: '18mm', left: '18mm' }}>
@@ -86,27 +86,28 @@ export function ContractMain1({ record }: TemplateProps) {
           <tbody>
             <tr>
               <td style={tdLabel}>사업자등록번호</td>
-              <td style={{ ...td, textAlign: 'center' }} colSpan={3}>
+              <td style={{ ...td, textAlign: 'center' }} colSpan={4}>
                 {record.bizRegNumber ?? ''}
               </td>
             </tr>
             <tr>
               <td style={tdLabel}>회 사 명</td>
-              <td style={{ ...td, textAlign: 'center' }} colSpan={3}>
+              <td style={{ ...td, textAlign: 'center' }} colSpan={4}>
                 {record.companyName}
               </td>
             </tr>
             <tr>
               <td style={tdLabel}>연 락 처</td>
-              <td style={{ ...td, width: '22mm', textAlign: 'center', fontWeight: 600 }}>(전화)</td>
+              <td style={{ ...td, width: '20mm', textAlign: 'center', fontWeight: 600 }}>(전화)</td>
               <td style={{ ...td, textAlign: 'center' }}>{record.bizPhone ?? ''}</td>
-              <td style={{ ...td, width: '22mm', textAlign: 'center', fontWeight: 600 }}>
+              <td style={{ ...td, width: '24mm', textAlign: 'center', fontWeight: 600 }}>
                 (주민번호)
               </td>
+              <td style={{ ...td, textAlign: 'center' }}>{rrn ?? ''}</td>
             </tr>
             <tr>
               <td style={tdLabel}>대 표 자</td>
-              <td style={{ ...td, textAlign: 'center' }} colSpan={3}>
+              <td style={{ ...td, textAlign: 'center' }} colSpan={4}>
                 {record.representative}
               </td>
             </tr>
@@ -127,7 +128,7 @@ export function ContractMain1({ record }: TemplateProps) {
             <tr>
               <td style={tdLabel}>주업태 및 종목</td>
               <td style={{ ...td, width: '14mm', textAlign: 'center' }}>①</td>
-              <td style={td}>{sunim.industry1}</td>
+              <td style={{ ...td, fontSize: '9pt', whiteSpace: 'nowrap' }}>{sunim.industry1}</td>
               <td style={{ ...td, width: '14mm', textAlign: 'center' }}>②</td>
               <td style={{ ...td, width: '40mm' }}>{sunim.industry2}</td>
             </tr>

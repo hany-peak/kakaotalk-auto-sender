@@ -48,12 +48,9 @@ export function ContractMain2({ record }: TemplateProps) {
       <div style={subItem}>6. 4대보험 신고관련 업무(자격취득, 자격상실, 보수총액신고)</div>
 
       <div style={sectionBlock}>② 위 ①항의 범위를 포함하지 않는 업무범위는 아래와 같다.</div>
-      <div style={subItem}>1. 성실신고확인</div>
-      <div style={subItem}>2. 세무조사입회대리</div>
-      <div style={subItem}>3. 조세불복업무</div>
-      <div style={subItem}>4. 세무(경영)자문</div>
-      <div style={subItem}>5. 세무경영컨설팅</div>
-      <div style={subItem}>6. 기타 1항에 포함되지 않는 업무</div>
+      <div style={sectionBlock}>
+        1. 성실신고확인 &nbsp; 2. 세무조사입회대리 &nbsp; 3. 조세불복업무 &nbsp; 4. 세무(경영)자문 &nbsp; 5. 세무경영컨설팅 &nbsp; 6. 기타 1항에 포함되지 않는 업무
+      </div>
       <div style={sectionBlock}>
         단, 법인세 및 소득세 결산 이후 세무조정을 통해 신고 업무는 별도의 조정료 청구로 지급되어야 한다.
       </div>
@@ -174,6 +171,32 @@ export function ContractMain2({ record }: TemplateProps) {
       <div style={sectionBlock}>
         ① 본 계약에 명시되지 아니한 사항 및 계약내용의 변경이 발생하게 된 경우에는 건전한 사회통념 및 상관습에 따라 위임자와 수임자 간 상호 협의하여 결정한다.
       </div>
+      <div style={sectionBlock}>
+        ② 본 계약에 의해서 신고 또는 작성되는 일체의 서류는 위임자가 제공한 정보에 따라 신고 또는 작성되는 것으로 사실을 있는 그대로 반영하는데 한계가 있음을 명시한다.
+      </div>
+
+      <div style={{ fontSize: '8pt', marginTop: '3mm', marginBottom: '3mm' }}>
+        위 사실을 증명하기 위해 본 계약서를 2통 작성하여 서명 또는 날인하고 위임자와 수임자는 각각 1통씩 보관한다.
+      </div>
+
+      <table style={{ width: '100%', fontSize: '9pt', borderCollapse: 'collapse', marginTop: '3mm' }}>
+        <tbody>
+          <tr>
+            <td style={{ width: '40mm', padding: '2mm 0', textAlign: 'center' }}>위임자 또는 대리인</td>
+            <td style={{ padding: '2mm 0', textAlign: 'center' }}>
+              {`${record.companyName} ${record.representative} 대표님`}
+            </td>
+            <td style={{ width: '30mm', padding: '2mm 0', textAlign: 'center' }}>(인/서명)</td>
+          </tr>
+          <tr>
+            <td style={{ width: '40mm', padding: '4mm 0 2mm', textAlign: 'center' }}>수임자 또는 대리인</td>
+            <td style={{ padding: '4mm 0 2mm', textAlign: 'center' }}>
+              코드세무회계 본점 대표 세무사 정주희
+            </td>
+            <td style={{ width: '30mm', padding: '4mm 0 2mm', textAlign: 'center' }}>(인/서명)</td>
+          </tr>
+        </tbody>
+      </table>
     </PageFrame>
   );
 }
