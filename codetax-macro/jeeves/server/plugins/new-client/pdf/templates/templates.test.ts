@@ -9,6 +9,7 @@ import { EdiNhis } from './EdiNhis';
 import { ContractCover } from './ContractCover';
 import { ContractMain1 } from './ContractMain1';
 import { ContractMain2 } from './ContractMain2';
+import { ContractFeeSchedule } from './ContractFeeSchedule';
 import type { TemplateProps } from './shared/TemplateProps';
 import type { NewClientRecord } from '../../types';
 
@@ -49,6 +50,7 @@ const components: Array<[string, (p: TemplateProps) => React.ReactElement]> = [
   ['ContractCover', ContractCover],
   ['ContractMain1', ContractMain1],
   ['ContractMain2', ContractMain2],
+  ['ContractFeeSchedule', ContractFeeSchedule],
 ];
 
 for (const [name, Component] of components) {

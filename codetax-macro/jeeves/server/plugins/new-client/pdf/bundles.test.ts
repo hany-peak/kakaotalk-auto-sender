@@ -50,13 +50,13 @@ test('assembleBundle(cms): 단일 페이지 PDF 반환', async () => {
   assert.equal(buf.slice(0, 4).toString(), '%PDF');
 });
 
-test('assembleBundle(contract): 표지+본문1+본문2 → 3페이지 병합 PDF', async () => {
+test('assembleBundle(contract): 표지+본문1+본문2+보수표 → 4페이지 병합 PDF', async () => {
   const c = BUNDLE_GROUPS.find((g) => g.id === 'contract')!;
   const buf = await assembleBundle(c, sampleRecord, '8001011234567');
   assert.equal(buf.slice(0, 4).toString(), '%PDF');
   const { PDFDocument } = await import('pdf-lib');
   const doc = await PDFDocument.load(buf);
-  assert.equal(doc.getPageCount(), 3);
+  assert.equal(doc.getPageCount(), 4);
 });
 
 test('assembleBundle(edi): 국민+건강 → 2페이지 병합 PDF', async () => {

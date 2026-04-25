@@ -12,6 +12,7 @@ import { EdiNhis } from './templates/EdiNhis';
 import { ContractCover } from './templates/ContractCover';
 import { ContractMain1 } from './templates/ContractMain1';
 import { ContractMain2 } from './templates/ContractMain2';
+import { ContractFeeSchedule } from './templates/ContractFeeSchedule';
 
 export type BundleId = 'contract' | 'cms' | 'consent' | 'edi';
 
@@ -24,7 +25,7 @@ export interface BundleGroup {
 }
 
 export const BUNDLE_GROUPS: BundleGroup[] = [
-  { id: 'contract', filename: '기장계약서', templates: [ContractCover, ContractMain1, ContractMain2] },
+  { id: 'contract', filename: '기장계약서', templates: [ContractCover, ContractMain1, ContractMain2, ContractFeeSchedule] },
   { id: 'cms', filename: 'CMS', templates: [CMS] },
   { id: 'consent', filename: '수임동의', templates: [Consent] },
   { id: 'edi', filename: 'EDI', templates: [EdiKb, EdiNhis] },
