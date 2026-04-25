@@ -18,8 +18,6 @@ export interface ThebillConfig {
   airtableFeeStatusField: string;
   airtableFeeNameField: string;
   airtableFeeRemarkField: string;
-  // 빈 문자열이면 동적 [N월] 뷰. 명시되면 그 뷰를 항상 사용 (scope-무관 뷰 권장).
-  airtableFeeViewName: string;
   // Slack 알림은 optional — 비어있으면 알림만 skip, 동기화는 계속 진행.
   slackBotToken?: string;
   slackChannel?: string;
@@ -51,11 +49,7 @@ export function loadConfig(): ThebillConfig {
     .map(([k]) => k);
   if (missing.length > 0) throw new ThebillConfigError(missing);
   return {
-    ...(required as Omit<
-      ThebillConfig,
-      'airtableFeeViewName' | 'slackBotToken' | 'slackChannel'
-    >),
-    airtableFeeViewName: process.env.AIRTABLE_FEE_VIEW_NAME ?? '',
+    ...(required as Omit<ThebillConfig, 'slackBotToken' | 'slackChannel'>),
     slackBotToken: process.env.RECEIVABLES_SLACK_BOT_TOKEN || undefined,
     slackChannel: process.env.RECEIVABLES_SLACK_CHANNEL || undefined,
   };

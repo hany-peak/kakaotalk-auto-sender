@@ -46,7 +46,8 @@ export async function updateFeeTable(
   const cfg = cfgOverride ?? loadConfig();
   const base = new Airtable({ apiKey: cfg.airtableFeePat }).base(cfg.airtableFeeBaseId);
   const table = base(cfg.airtableFeeTableId);
-  const view = cfg.airtableFeeViewName || currentCycleView();
+  // 항상 현재 cycle 의 monthly view 동적 계산 — env override 없음.
+  const view = currentCycleView();
 
   const result: UpdateResult = {
     total: rows.length,
