@@ -30,10 +30,10 @@ import { registerPreviewRoutes } from './pdf/preview-routes';
  * RFC 5987 기반 Content-Disposition. 한글 포함 파일명을 안전하게 전달.
  * 브라우저는 filename* 우선, 오래된 클라이언트는 filename(ASCII fallback) 사용.
  */
-function contentDisposition(filename: string): string {
+function contentDisposition(filename: string, disposition: 'attachment' | 'inline' = 'attachment'): string {
   const asciiFallback = filename.replace(/[^\x20-\x7E]/g, '_');
   const encoded = encodeURIComponent(filename);
-  return `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
+  return `${disposition}; filename="${asciiFallback}"; filename*=UTF-8''${encoded}`;
 }
 import {
   createClientFolders,
@@ -475,7 +475,7 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
-        inline ? `inline; filename="${baseName}.pdf"` : contentDisposition(`${baseName}.pdf`),
+        contentDisposition(`${baseName}.pdf`, inline ? 'inline' : 'attachment'),
       );
       return res.send(pdf);
     } catch (err: any) {
