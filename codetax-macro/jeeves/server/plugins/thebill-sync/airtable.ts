@@ -12,12 +12,20 @@ export interface UnpaidEntry {
   reason: string; // raw 더빌 status, 예: "출금실패 잔액부족 [자동출금] 재출금중지"
 }
 
+export interface UnmatchedEntry {
+  bizNo: string;
+  name: string;
+  representative: string;
+  amount: number;
+  reason: string;
+}
+
 export interface UpdateResult {
   total: number;
   successUpdated: number;
   failureUpdated: number;
   skipped: number;
-  unmatched: string[];
+  unmatched: UnmatchedEntry[];
   errors: { bizNo: string; error: string }[];
   failureRows: UnpaidEntry[];
 }
@@ -103,7 +111,13 @@ export async function updateFeeTable(
 
     const record = byBiz.get(bizNo);
     if (!record) {
-      result.unmatched.push(bizNo);
+      result.unmatched.push({
+        bizNo,
+        name: row.memberName,
+        representative: row.representative,
+        amount: row.amount,
+        reason: row.status,
+      });
       continue;
     }
 

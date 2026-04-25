@@ -69,6 +69,7 @@ export async function run(
     ctx.log('[thebill-sync] slack 알림 발송...');
     await slack.notifyUnpaidSummary(
       updateResult.failureRows,
+      updateResult.unmatched,
       updateResult.total,
       durationMs,
       ctx.log,
