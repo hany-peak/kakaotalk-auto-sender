@@ -1,12 +1,59 @@
 import * as XLSX from 'xlsx';
 
-export type ThebillRow = Record<string, string | number | boolean | null>;
+export interface ThebillRow {
+  bizNo: string;
+  memberName: string;
+  amount: number;
+  status: string;
+  drawDate: string;
+}
+
+export type StatusClass = 'success' | 'failure' | 'unknown';
+
+const HEADER_CANDIDATES = {
+  bizNo: ['사업자번호', '주민(사업자)번호', '주민번호', '식별번호'],
+  memberName: ['회원명', '고객명', '업체명'],
+  amount: ['금액', '청구금액', '출금액'],
+  status: ['상태', '결과', '처리상태'],
+  drawDate: ['출금일', '처리일', '결제일'],
+};
+
+function pickField(
+  row: Record<string, unknown>,
+  candidates: string[],
+): unknown {
+  for (const key of candidates) {
+    if (key in row) return row[key];
+  }
+  return undefined;
+}
+
+export function normalizeBizNo(raw: string | number): string {
+  return String(raw ?? '').replace(/[\s-]/g, '');
+}
+
+export function classifyStatus(raw: string): StatusClass {
+  const s = (raw ?? '').trim();
+  if (s.includes('성공') || s.includes('정상')) return 'success';
+  if (s.includes('실패')) return 'failure';
+  return 'unknown';
+}
 
 export function parse(xlsxPath: string): ThebillRow[] {
   const wb = XLSX.readFile(xlsxPath);
   const firstSheet = wb.SheetNames[0];
   if (!firstSheet) return [];
   const sheet = wb.Sheets[firstSheet];
-  const rows = XLSX.utils.sheet_to_json<ThebillRow>(sheet, { defval: null });
-  return rows.filter((r) => Object.values(r).some((v) => v !== null && v !== ''));
+  const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null });
+
+  return raw
+    .filter((r) => Object.values(r).some((v) => v !== null && v !== ''))
+    .map((r) => ({
+      bizNo: normalizeBizNo(pickField(r, HEADER_CANDIDATES.bizNo) as string | number),
+      memberName: String(pickField(r, HEADER_CANDIDATES.memberName) ?? ''),
+      amount: Number(pickField(r, HEADER_CANDIDATES.amount) ?? 0),
+      status: String(pickField(r, HEADER_CANDIDATES.status) ?? ''),
+      drawDate: String(pickField(r, HEADER_CANDIDATES.drawDate) ?? ''),
+    }))
+    .filter((r) => r.bizNo);
 }

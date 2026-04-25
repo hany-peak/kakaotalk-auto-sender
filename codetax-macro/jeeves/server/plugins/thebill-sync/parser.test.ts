@@ -1,0 +1,35 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { normalizeBizNo, classifyStatus } from './parser';
+
+test('normalizeBizNo strips hyphens', () => {
+  assert.equal(normalizeBizNo('123-45-67890'), '1234567890');
+});
+
+test('normalizeBizNo strips spaces', () => {
+  assert.equal(normalizeBizNo(' 123 45 67890 '), '1234567890');
+});
+
+test('normalizeBizNo passes through individual ID prefix (6 digits)', () => {
+  assert.equal(normalizeBizNo('880101'), '880101');
+});
+
+test('normalizeBizNo handles number input', () => {
+  assert.equal(normalizeBizNo(1234567890 as unknown as string), '1234567890');
+});
+
+test('classifyStatus maps success values', () => {
+  assert.equal(classifyStatus('출금성공'), 'success');
+  assert.equal(classifyStatus('승인성공'), 'success');
+  assert.equal(classifyStatus('정상출금'), 'success');
+});
+
+test('classifyStatus maps failure values', () => {
+  assert.equal(classifyStatus('승인실패'), 'failure');
+  assert.equal(classifyStatus('출금실패'), 'failure');
+});
+
+test('classifyStatus returns unknown for unrecognized', () => {
+  assert.equal(classifyStatus('대기중'), 'unknown');
+  assert.equal(classifyStatus(''), 'unknown');
+});
