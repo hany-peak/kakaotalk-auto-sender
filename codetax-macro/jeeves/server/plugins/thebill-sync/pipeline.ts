@@ -71,6 +71,7 @@ export async function run(
       updateResult.failureRows,
       updateResult.total,
       durationMs,
+      ctx.log,
     );
     ctx.log('[thebill-sync] slack 완료');
 

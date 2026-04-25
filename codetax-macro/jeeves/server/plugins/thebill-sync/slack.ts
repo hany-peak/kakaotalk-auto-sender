@@ -45,42 +45,53 @@ export async function notifyUnpaidSummary(
   rows: UnpaidEntry[],
   totalProcessed: number,
   durationMs: number,
+  log: (msg: string) => void = () => {},
 ): Promise<void> {
   const c = client();
-  if (!c) return;
-  const sec = Math.round(durationMs / 1000);
-
-  if (rows.length === 0) {
-    await c.web.chat.postMessage({
-      channel: c.channel,
-      text: `✅ thebill-sync 완료 — 처리 ${totalProcessed}건, 신규 미수업체 없음 / ${sec}초`,
-    });
+  if (!c) {
+    log('[thebill-sync] slack skip — RECEIVABLES_SLACK_BOT_TOKEN 또는 _CHANNEL 미설정');
     return;
   }
+  log(`[thebill-sync] slack 발송 channel="${c.channel}" rows=${rows.length}`);
 
-  const groups = new Map<string, UnpaidEntry[]>();
-  for (const r of rows) {
-    const arr = groups.get(r.yearMonth) ?? [];
-    arr.push(r);
-    groups.set(r.yearMonth, arr);
+  const sec = Math.round(durationMs / 1000);
+  let text: string;
+
+  if (rows.length === 0) {
+    text = `✅ thebill-sync 완료 — 처리 ${totalProcessed}건, 신규 미수업체 없음 / ${sec}초`;
+  } else {
+    const groups = new Map<string, UnpaidEntry[]>();
+    for (const r of rows) {
+      const arr = groups.get(r.yearMonth) ?? [];
+      arr.push(r);
+      groups.set(r.yearMonth, arr);
+    }
+
+    const sections: string[] = [];
+    for (const ym of [...groups.keys()].sort()) {
+      const items = groups.get(ym)!;
+      const [year, month] = ym.split('-');
+      const label = year && month ? `${year}년 ${month}월` : '(귀속월 미상)';
+      const lines = items.map((r) => {
+        const nameDisp = r.representative ? `${r.name}(${r.representative})` : r.name;
+        const reason = r.reason ? ` — ${r.reason}` : '';
+        return `• ${nameDisp}: ${r.amount.toLocaleString('ko-KR')}원${reason}`;
+      });
+      sections.push(`:date: ${label} 내역 (${items.length}건)\n${lines.join('\n')}`);
+    }
+    const header = `✅ thebill-sync 완료 — 처리 ${totalProcessed}건 / ${sec}초`;
+    text = `${header}\n\n${sections.join('\n\n')}`;
   }
 
-  const sections: string[] = [];
-  for (const ym of [...groups.keys()].sort()) {
-    const items = groups.get(ym)!;
-    const [year, month] = ym.split('-');
-    const label = year && month ? `${year}년 ${month}월` : '(귀속월 미상)';
-    const lines = items.map((r) => {
-      const nameDisp = r.representative ? `${r.name}(${r.representative})` : r.name;
-      const reason = r.reason ? ` — ${r.reason}` : '';
-      return `• ${nameDisp}: ${r.amount.toLocaleString('ko-KR')}원${reason}`;
-    });
-    sections.push(`:date: ${label} 내역 (${items.length}건)\n${lines.join('\n')}`);
+  try {
+    const res = await c.web.chat.postMessage({ channel: c.channel, text });
+    log(
+      `[thebill-sync] slack post ok=${res.ok}, channel=${res.channel ?? '?'}, ts=${res.ts ?? '?'}`,
+    );
+  } catch (err: any) {
+    log(`[thebill-sync] slack post FAIL: ${err?.data ? JSON.stringify(err.data) : err?.message ?? err}`);
+    throw err;
   }
-
-  const header = `✅ thebill-sync 완료 — 처리 ${totalProcessed}건 / ${sec}초`;
-  const text = `${header}\n\n${sections.join('\n\n')}`;
-  await c.web.chat.postMessage({ channel: c.channel, text });
 }
 
 export async function notifyFailure(err: Error, stage?: string): Promise<void> {
