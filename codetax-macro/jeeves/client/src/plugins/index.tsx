@@ -3,6 +3,7 @@ import { vatNoticePlugin } from './vat-notice';
 import { kakaoSendPlugin } from './kakao-send';
 import { thebillWithdrawalPlugin, thebillReWithdrawalPlugin } from './thebill-sync';
 import { newClientPlugin } from './new-client';
+import { paymentReminderPlugin } from './payment-reminder';
 
 function PlaceholderPage() {
   return <div className="text-muted">준비 중...</div>;
@@ -14,6 +15,7 @@ export const plugins: MacroPagePlugin[] = [
   thebillWithdrawalPlugin,
   thebillReWithdrawalPlugin,
   newClientPlugin,
+  paymentReminderPlugin,
   {
     id: 'income-tax',
     name: '소득세 집계',
