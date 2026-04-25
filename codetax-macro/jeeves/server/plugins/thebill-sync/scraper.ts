@@ -149,8 +149,10 @@ async function navigateAndDownload(
     const optionTexts = await workTypeSelect.locator('option').allTextContents();
     ctx.log(`[thebill-sync] 작업내용 옵션: [${optionTexts.join(' | ')}]`);
 
-    const etcIdx = optionTexts.findIndex((t) => t.trim() === '기타');
-    const targetIdx = etcIdx >= 0 ? etcIdx : 1;
+    // 우선순위: "제출" → "기타" → index 1 (선택하세요 다음).
+    const findIdx = (label: string) =>
+      optionTexts.findIndex((t) => t.trim() === label);
+    const targetIdx = [findIdx('제출'), findIdx('기타')].find((i) => i >= 0) ?? 1;
     await workTypeSelect.selectOption({ index: targetIdx }).catch((e) => {
       ctx.log(`[thebill-sync] selectOption(index:${targetIdx}) 실패: ${e.message}`);
     });
