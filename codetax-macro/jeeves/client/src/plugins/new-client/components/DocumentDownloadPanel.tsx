@@ -82,6 +82,14 @@ export function DocumentDownloadPanel({ record }: Props) {
     }
   }
 
+  function onPreview(groupId: GroupId) {
+    window.open(
+      `/api/new-client/${record.id}/contract-download?group=${groupId}&inline=1`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }
+
   return (
     <div className="rounded border border-border bg-surface2/40 p-3 mb-3">
       <div className="text-xs text-muted mb-2">문서 다운로드</div>
@@ -99,6 +107,17 @@ export function DocumentDownloadPanel({ record }: Props) {
                   className="px-2 py-0.5 rounded text-[11px] border border-border hover:bg-surface2 disabled:opacity-50"
                 >
                   {pendingKey === doc.id ? '생성 중…' : 'PDF'}
+                </button>
+              </td>
+              <td className="py-1 pr-1.5">
+                <button
+                  type="button"
+                  disabled={disabled}
+                  title={title}
+                  onClick={() => onPreview(doc.id)}
+                  className="px-2 py-0.5 rounded text-[11px] border border-border hover:bg-surface2 disabled:opacity-50"
+                >
+                  미리보기
                 </button>
               </td>
             </tr>

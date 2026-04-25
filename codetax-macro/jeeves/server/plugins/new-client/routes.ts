@@ -469,10 +469,14 @@ export function registerNewClientRoutes(app: Express, ctx: ServerContext): void 
     const companyTag = sanitizeFilename(record.companyName || 'client');
     const baseName = `${companyTag}_${group.filename}`;
 
+    const inline = req.query.inline === '1';
     try {
       const pdf = await assembleBundle(group, record, rrn);
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', contentDisposition(`${baseName}.pdf`));
+      res.setHeader(
+        'Content-Disposition',
+        inline ? `inline; filename="${baseName}.pdf"` : contentDisposition(`${baseName}.pdf`),
+      );
       return res.send(pdf);
     } catch (err: any) {
       ctx.logError(`[new-client] contract-download pdf failed: ${err.message || err}`);
