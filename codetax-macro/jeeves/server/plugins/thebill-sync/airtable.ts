@@ -64,13 +64,13 @@ export async function updateFeeTable(
 
     const bizNo = normalizeBizNo(row.bizNo);
     try {
-      // Airtable 의 사업자번호 컬럼이 하이픈(`150-36-00401`) / 공백 / 숫자만 어느 형식이든
-      // 매칭되도록 SUBSTITUTE 로 server-side 정규화 후 비교.
+      // 사업자번호 컬럼이 lookup/linked 필드라 array 로 반환됨 (예: ["150-36-00401"]).
+      // ARRAYJOIN 으로 string 변환 후 SUBSTITUTE 로 하이픈/공백 양쪽 정규화 비교.
       const records = await table
         .select({
           view,
           maxRecords: 1,
-          filterByFormula: `SUBSTITUTE(SUBSTITUTE({${cfg.airtableFeeBizNoField}},'-',''),' ','')='${escapeFormula(bizNo)}'`,
+          filterByFormula: `SUBSTITUTE(SUBSTITUTE(ARRAYJOIN({${cfg.airtableFeeBizNoField}}),'-',''),' ','')='${escapeFormula(bizNo)}'`,
         })
         .firstPage();
 
