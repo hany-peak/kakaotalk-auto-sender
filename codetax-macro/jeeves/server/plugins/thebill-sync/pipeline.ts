@@ -1,39 +1,85 @@
-import type { ServerContext } from '../types';
-import type { RunResult } from '../types';
+import type { ServerContext, RunResult } from '../types';
 import * as scraper from './scraper';
 import * as parser from './parser';
 import * as airtable from './airtable';
 import * as slack from './slack';
+import { adjustToBusinessDay, addBusinessDays } from './business-day';
 
-export async function run(ctx: ServerContext): Promise<RunResult> {
+export type RunMode = 'withdrawal' | 'reWithdrawal';
+
+function nthOfThisMonth(n: number): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), n);
+}
+
+function computePeriod(mode: RunMode): { from: Date; to: Date } {
+  if (mode === 'withdrawal') {
+    const target = adjustToBusinessDay(nthOfThisMonth(25), 'backward');
+    return { from: target, to: target };
+  }
+  const start = adjustToBusinessDay(nthOfThisMonth(26), 'forward');
+  const end = addBusinessDays(nthOfThisMonth(25), 8);
+  return { from: start, to: end };
+}
+
+export interface RunOptions {
+  mode: RunMode;
+  from?: Date;
+  to?: Date;
+}
+
+export async function run(
+  ctx: ServerContext,
+  opts: RunOptions = { mode: 'withdrawal' },
+): Promise<RunResult> {
   const start = Date.now();
   const startedAt = new Date().toISOString();
   let stage: 'scrape' | 'parse' | 'airtable' | 'slack' = 'scrape';
+  const period = opts.from && opts.to ? { from: opts.from, to: opts.to } : computePeriod(opts.mode);
 
   try {
-    ctx.log('[thebill-sync] scraping CMS...');
-    const xlsxPath = await scraper.downloadResult(ctx);
+    ctx.log(`[thebill-sync] mode=${opts.mode} period=${period.from.toISOString().slice(0, 10)}~${period.to.toISOString().slice(0, 10)}`);
+    const xlsxPath = await scraper.downloadResult(ctx, {
+      mode: opts.mode,
+      from: period.from,
+      to: period.to,
+    });
 
     stage = 'parse';
-    ctx.log('[thebill-sync] parsing excel...');
     const rows = parser.parse(xlsxPath);
     ctx.log(`[thebill-sync] parsed ${rows.length} rows`);
 
     stage = 'airtable';
-    ctx.log('[thebill-sync] syncing to Airtable...');
-    const syncResult = await airtable.upsertAll(rows);
+    const updateResult = await airtable.updateFeeTable(rows, opts.mode);
 
     const durationMs = Date.now() - start;
     stage = 'slack';
-    await slack.notifySuccess(syncResult, durationMs);
+    await slack.notifySuccess(
+      {
+        total: updateResult.total,
+        updated: updateResult.successUpdated + updateResult.failureUpdated,
+        created: 0,
+        failed: updateResult.errors.length,
+        skipped: updateResult.skipped,
+        errors: updateResult.errors.map((e) => ({ key: e.bizNo, error: e.error })),
+      },
+      durationMs,
+    );
 
     return {
       status: 'success',
       startedAt,
       finishedAt: new Date().toISOString(),
       durationMs,
-      summary: `총 ${syncResult.total}건 (수정 ${syncResult.updated} / 생성 ${syncResult.created} / 실패 ${syncResult.failed})`,
-      meta: syncResult as unknown as Record<string, unknown>,
+      summary: `[${opts.mode}] 총 ${updateResult.total}건 (성공반영 ${updateResult.successUpdated}, 실패반영 ${updateResult.failureUpdated}, 매칭실패 ${updateResult.unmatched.length}, 에러 ${updateResult.errors.length})`,
+      meta: {
+        mode: opts.mode,
+        period: {
+          from: period.from.toISOString().slice(0, 10),
+          to: period.to.toISOString().slice(0, 10),
+        },
+        ...updateResult,
+      } as unknown as Record<string, unknown>,
     };
   } catch (err) {
     const e = err instanceof Error ? err : new Error(String(err));
@@ -46,9 +92,9 @@ export async function run(ctx: ServerContext): Promise<RunResult> {
       startedAt,
       finishedAt: new Date().toISOString(),
       durationMs: Date.now() - start,
-      summary: `실패 (${stage}): ${e.message}`,
+      summary: `[${opts.mode}] 실패 (${stage}): ${e.message}`,
       error: e.stack ?? e.message,
-      meta: { stage },
+      meta: { stage, mode: opts.mode },
     };
   }
 }

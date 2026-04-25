@@ -1,6 +1,14 @@
 import { WebClient } from '@slack/web-api';
 import { loadConfig } from './config';
-import type { SyncResult } from './airtable';
+
+export interface SyncResult {
+  total: number;
+  updated: number;
+  created: number;
+  failed: number;
+  skipped: number;
+  errors: { key: string; error: string }[];
+}
 
 function client(): { web: WebClient; channel: string } {
   const cfg = loadConfig();
