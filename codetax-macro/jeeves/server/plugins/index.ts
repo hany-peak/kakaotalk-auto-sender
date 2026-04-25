@@ -4,6 +4,7 @@ import { kakaoSendPlugin } from './kakao-send';
 import { messagesPlugin } from './messages';
 import { thebillWithdrawalPlugin, thebillReWithdrawalPlugin } from './thebill-sync';
 import { newClientPlugin } from './new-client';
+import { paymentReminderPlugin } from './payment-reminder';
 
 export const plugins: MacroPlugin[] = [
   vatNoticePlugin,
@@ -12,4 +13,5 @@ export const plugins: MacroPlugin[] = [
   thebillWithdrawalPlugin,
   thebillReWithdrawalPlugin,
   newClientPlugin,
+  paymentReminderPlugin,
 ];
