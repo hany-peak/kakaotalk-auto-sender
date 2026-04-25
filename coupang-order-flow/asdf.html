@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEALTHIO - 개인 맞춤형 건강 솔루션</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, #00d4ff20 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, #ff006e20 0%, transparent 50%),
+                        radial-gradient(circle at 40% 80%, #8338ec20 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            padding: 0 40px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .brand-logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00d4ff, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 300;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #b0b0b0;
+            margin-bottom: 3rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 18px 40px;
+            background: linear-gradient(45deg, #00d4ff, #ff006e);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.4);
+        }
+
+        .form-section {
+            background: #111111;
+            padding: 100px 40px;
+            position: relative;
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ffffff, #b0b0b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-header p {
+            font-size: 1.1rem;
+            color: #888;
+        }
+
+        .form-step {
+            margin-bottom: 50px;
+        }
+
+        .step-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(45deg, #00d4ff, #ff006e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 15px;
+            font-size: 0.9rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: #cccccc;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        select option {
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .checkbox-item {
+            position: relative;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-weight: 400;
+        }
+
+        .checkbox-item label::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + label::before {
+            background: linear-gradient(45deg, #00d4ff, #ff006e);
+            border-color: transparent;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + label::after {
+            content: '✓';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(45deg, #00d4ff, #ff006e, #8338ec);
+            background-size: 200% 200%;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px rgba(0, 212, 255, 0.4);
+        }
+
+        .results {
+            background: #0d0d0d;
+            padding: 80px 40px;
+            display: none;
+        }
+
+        .results-container {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 60px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #00d4ff;
+        }
+
+        .supplement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .supplement-item {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 0, 110, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .supplement-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #00d4ff;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 212, 255, 0.3);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .form-container, .results-container {
+                padding: 30px;
+            }
+            
+            .hero-content {
+                padding: 0 20px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="brand-logo">🏥 HEALTHIO</div>
+                <h1>개인 맞춤형<br>건강 솔루션</h1>
+                <p>AI 기반 분석으로 당신만의 건강한 라이프스타일을 제안합니다</p>
+                <a href="#form" class="cta-button">무료 건강 분석 시작하기</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="form" class="form-section">
+        <div class="container">
+            <div class="form-container">
+                <div class="section-header">
+                    <h2>건강 프로파일 분석</h2>
+                    <p>몇 가지 질문에 답하시면 맞춤형 건강 솔루션을 제공해드립니다</p>
+                </div>
+
+                <form id="healthForm">
+                    <div class="form-step">
+                        <div class="step-title">
+                            <div class="step-number">1</div>
+                            기본 정보
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="age">연령대</label>
+                                <select id="age" required>
+                                    <option value="">선택해주세요</option>
+                                    <option value="10-19">10대</option>
+                                    <option value="20-29">20대</option>
+                                    <option value="30-39">30대</option>
+                                    <option value="40-49">40대</option>
+                                    <option value="50-59">50대</option>
+                                    <option value="60+">60대 이상</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gender">성별</label>
+                                <select id="gender" required>
+                                    <option value="">선택해주세요</option>
+                                    <option value="male">남성</option>
+                                    <option value="female">여성</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="height">키 (cm)</label>
+                                <input type="number" id="height" placeholder="예: 175">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="weight">몸무게 (kg)</label>
+                                <input type="number" id="weight" placeholder="예: 70">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-step">
+                        <div class="step-title">
+                            <div class="step-number">2</div>
+                            건강 상태 및 주의사항
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>기존 질환이나 주의사항 (해당되는 것을 모두 선택)</label>
+                            <div class="checkbox-grid">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="diabetes" value="당뇨">
+                                    <label for="diabetes">당뇨병</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="hypertension" value="고혈압">
+                                    <label for="hypertension">고혈압</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="heart" value="심장질환">
+                                    <label for="heart">심장질환</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="stomach" value="위장질환">
+                                    <label for="stomach">위장질환</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="joint" value="관절염">
+                                    <label for="joint">관절염</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="none" value="없음">
+                                    <label for="none">특별한 질환 없음</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-step">
+                        <div class="step-title">
+                            <div class="step-number">3</div>
+                            건강 관리 목적
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="purpose">주요 목적을 선택해주세요</label>
+                            <select id="purpose" required>
+                                <option value="">선택해주세요</option>
+                                <option value="diet">다이어트/체중 관리</option>
+                                <option value="health">전반적인 건강 증진</option>
+                                <option value="energy">활기/에너지 증진</option>
+                                <option value="immunity">면역력 강화</option>
+                                <option value="stress">스트레스 관리</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-step">
+                        <div class="step-title">
+                            <div class="step-number">4</div>
+                            생활 패턴 분석
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="meals">식사 패턴</label>
+                                <select id="meals">
+                                    <option value="">선택해주세요</option>
+                                    <option value="regular">규칙적인 3끼</option>
+                                    <option value="skip-breakfast">아침 거르기</option>
+                                    <option value="skip-dinner">저녁 거르기</option>
+                                    <option value="irregular">불규칙한 식사</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="exercise">운동 빈도</label>
+                                <select id="exercise">
+                                    <option value="">선택해주세요</option>
+                                    <option value="none">거의 안 함</option>
+                                    <option value="light">주 1-2회</option>
+                                    <option value="moderate">주 3-4회</option>
+                                    <option value="heavy">주 5회 이상</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sleep">수면 패턴</label>
+                                <select id="sleep">
+                                    <option value="">선택해주세요</option>
+                                    <option value="good">규칙적이고 충분함 (7-8시간)</option>
+                                    <option value="short">부족함 (6시간 미만)</option>
+                                    <option value="irregular">불규칙함</option>
+                                    <option value="poor">잠들기 어려움</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="stress">스트레스 수준</label>
+                                <select id="stress">
+                                    <option value="">선택해주세요</option>
+                                    <option value="low">낮음</option>
+                                    <option value="moderate">보통</option>
+                                    <option value="high">높음</option>
+                                    <option value="very-high">매우 높음</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="submit-btn" id="submitBtn">
+                        맞춤 건강 솔루션 분석하기
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    <p>AI가 당신의 건강 데이터를 분석하고 있습니다...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="results" class="results">
+        <div class="container">
+            <div class="results-container" id="resultsContent">
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // 전역 변수
+        let currentUserData = {};
+
+        // 이벤트 리스너 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('submitBtn').addEventListener('click', handleSubmit);
+            
+            // 'none' 체크박스 특별 처리
+            document.getElementById('none').addEventListener('change', function() {
+                if (this.checked) {
+                    document.querySelectorAll('input[type="checkbox"]:not(#none)').forEach(cb => {
+                        cb.checked = false;
+                    });
+                }
+            });
+
+            // 다른 체크박스들이 선택되면 'none' 해제
+            document.querySelectorAll('input[type="checkbox"]:not(#none)').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    if (this.checked) {
+                        document.getElementById('none').checked = false;
+                    }
+                });
+            });
+        });
+
+        function handleSubmit() {
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const purpose = document.getElementById('purpose').value;
+            
+            if (!age || !gender || !purpose) {
+                alert('연령대, 성별, 건강 관리 목적은 필수 입력 항목입니다.');
+                return;
+            }
+            
+            // 로딩 화면 표시
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submitBtn').style.display = 'none';
+            
+            // 분석 시뮬레이션 (3초 후 결과 표시)
+            setTimeout(() => {
+                generateRecommendations();
+                document.getElementById('loading').style.display = 'none';
+            }, 3000);
+        }
+
+        function generateRecommendations() {
+            const data = {
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                height: document.getElementById('height').value,
+                weight: document.getElementById('weight').value,
+                purpose: document.getElementById('purpose').value,
+                meals: document.getElementById('meals').value,
+                exercise: document.getElementById('exercise').value,
+                sleep: document.getElementById('sleep').value,
+                stress: document.getElementById('stress').value
+            };
+            
+            const conditions = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                if (checkbox.value !== '없음') {
+                    conditions.push(checkbox.value);
+                }
+            });
+            data.conditions = conditions;
+
+            currentUserData = data;
+
+            const animalPersonality = generateAnimalPersonality(data);
+            const supplements = generateSupplements(data);
+            const bmiInfo = calculateBMI(data.height, data.weight);
+            const recommendedCalories = calculateCalories(data);
+            
+            displayResults(animalPersonality, data, supplements, bmiInfo, recommendedCalories);
+            
+            document.getElementById('results').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('results').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 300);
+        }
+
+        function generateAnimalPersonality(userData) {
+            const adjectives = ["활기찬", "차분한", "지혜로운", "용감한", "신비로운", "우아한", "강인한", "날렵한", "든든한", "창의적인"];
+            const animals = ["사자", "호랑이", "치타", "코끼리", "돌고래", "나무늘보", "판다", "코알라", "독수리", "백조", "여우", "늑대", "곰", "캥거루", "펭귄", "부엉이"];
+
+            const purposeAnimals = {
+                diet: ["치타", "가젤", "여우", "늑대"],
+                health: ["사자", "코끼리", "독수리", "곰"],
+                energy: ["돌고래", "캥거루", "앵무새"],
+                immunity: ["코뿔소", "곰", "사자"],
+                stress: ["나무늘보", "코알라", "판다", "백조"]
+            };
+
+            const selectedAnimals = purposeAnimals[userData.purpose] || animals;
+            const randomAnimal = selectedAnimals[Math.floor(Math.random() * selectedAnimals.length)];
+            const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+
+            const emojiMap = {
+                "사자": "🦁", "호랑이": "🐅", "치타": "🐆", "코끼리": "🐘", "돌고래": "🐬",
+                "나무늘보": "🦥", "판다": "🐼", "코알라": "🐨", "독수리": "🦅", "백조": "🦢",
+                "여우": "🦊", "늑대": "🐺", "곰": "🐻", "캥거루": "🦘", "펭귄": "🐧", "부엉이": "🦉",
+                "가젤": "🦌", "코뿔소": "🦏", "앵무새": "🦜"
+            };
+
+            return {
+                personality: randomAdjective + " " + randomAnimal,
+                adjective: randomAdjective,
+                animal: randomAnimal,
+                emoji: emojiMap[randomAnimal] || "🦄",
+                description: randomAdjective + " 성격의 " + randomAnimal + "처럼, 당신만의 방식으로 건강을 관리해나가는 타입입니다."
+            };
+        }
+
+        function generateSupplements(data) {
+            const supplementDb = {
+                diet: ['가르시니아 캄보지아', '녹차 추출물', '키토산', 'CLA', 'L-카르니틴'],
+                health: ['멀티비타민', '오메가-3', '비타민 D', '마그네슘', '프로바이오틱스'],
+                energy: ['비타민 B컴플렉스', '철분', '코엔자임 Q10', '홍삼', '타우린'],
+                immunity: ['비타민 C', '아연', '프로바이오틱스', '에키네시아', '비타민 D'],
+                stress: ['마그네슘', '아쉬와간다', 'GABA', '로디올라', '레몬밤']
+            };
+
+            let supplements = [...(supplementDb[data.purpose] || supplementDb.health)];
+            
+            if (data.gender === 'female') {
+                supplements.push('철분', '엽산', '칼슘');
+            }
+            if (data.age === '60+') {
+                supplements.push('비타민 B12', '칼슘', '글루코사민');
+            }
+            if (data.exercise === 'heavy') {
+                supplements.push('단백질 파우더', 'BCAA');
+            }
+            
+            return [...new Set(supplements)].slice(0, 6); // 중복 제거 및 6개로 제한
+        }
+
+        function calculateBMI(height, weight) {
+            if (!height || !weight) return null;
+            
+            const bmi = weight / ((height / 100) ** 2);
+            let category, advice, color;
+            
+            if (bmi < 18.5) {
+                category = '저체중';
+                advice = '영양소가 풍부한 식단과 근력 운동을 권장합니다.';
+                color = '#3498db';
+            } else if (bmi < 25) {
+                category = '정상체중';
+                advice = '현재 체중을 유지하며 규칙적인 운동을 계속하세요.';
+                color = '#27ae60';
+            } else if (bmi < 30) {
+                category = '과체중';
+                advice = '균형 잡힌 식단과 유산소 운동을 병행하세요.';
+                color = '#f39c12';
+            } else {
+                category = '비만';
+                advice = '전문의 상담을 받고 체계적인 다이어트 계획을 세우세요.';
+                color = '#e74c3c';
+            }
+            
+            return { bmi: bmi.toFixed(1), category, advice, color };
+        }
+
+        function calculateCalories(data) {
+            if (!data.height || !data.weight || !data.age) return null;
+            
+            const age = parseInt(data.age.split('-')[0]) || 30;
+            const height = parseFloat(data.height);
+            const weight = parseFloat(data.weight);
+            
+            let bmr;
+            if (data.gender === 'male') {
+                bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+            } else {
+                bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+            }
+            
+            const activityMultiplier = {
+                'none': 1.2,
+                'light': 1.375,
+                'moderate': 1.55,
+                'heavy': 1.725
+            };
+            
+            const activity = activityMultiplier[data.exercise] || 1.2;
+            const tdee = bmr * activity;
+            
+            return {
+                maintenance: Math.round(tdee),
+                weightLoss: Math.round(tdee - 500),
+                weightGain: Math.round(tdee + 500)
+            };
+        }
+
+        function displayResults(animalPersonality, data, supplements, bmiInfo, calorieInfo) {
+            const purposeNames = {
+                diet: '다이어트/체중 관리',
+                health: '전반적인 건강 증진',
+                energy: '활기/에너지 증진',
+                immunity: '면역력 강화',
+                stress: '스트레스 관리'
+            };
+
+            let bmiSection = '';
+            if (bmiInfo) {
+                bmiSection = `
+                    <div class="recommendation-card">
+                        <h3>📊 BMI 분석 결과</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                            <div style="text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
+                                <div style="font-size: 2rem; font-weight: bold; color: ${bmiInfo.color}; margin-bottom: 10px;">${bmiInfo.bmi}</div>
+                                <div style="color: #888;">BMI 지수</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px;">
+                                <div style="font-size: 1.2rem; font-weight: bold; color: ${bmiInfo.color}; margin-bottom: 10px;">${bmiInfo.category}</div>
+                                <div style="color: #888;">체중 분류</div>
+                            </div>
+                        </div>
+                        <p style="color: #ccc; line-height: 1.6;">${bmiInfo.advice}</p>
+                    </div>
+                `;
+            }
+
+            let calorieSection = '';
+            if (calorieInfo) {
+                calorieSection = `
+                    <div class="recommendation-card">
+                        <h3>🔥 일일 권장 칼로리</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.2)); border-radius: 15px; border: 1px solid rgba(231, 76, 60, 0.3);">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #e74c3c; margin-bottom: 5px;">${calorieInfo.weightLoss}</div>
+                                <div style="font-size: 0.9rem; color: #ccc;">체중 감량</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(39, 174, 96, 0.2)); border-radius: 15px; border: 1px solid rgba(39, 174, 96, 0.3);">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #27ae60; margin-bottom: 5px;">${calorieInfo.maintenance}</div>
+                                <div style="font-size: 0.9rem; color: #ccc;">체중 유지</div>
+                            </div>
+                            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.2)); border-radius: 15px; border: 1px solid rgba(52, 152, 219, 0.3);">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #3498db; margin-bottom: 5px;">${calorieInfo.weightGain}</div>
+                                <div style="font-size: 0.9rem; color: #ccc;">체중 증가</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const lifestyleAdvice = generateLifestyleAdvice(data);
+
+            document.getElementById('resultsContent').innerHTML = `
+                <div style="text-align: center; margin-bottom: 50px; padding: 40px; background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(255, 0, 110, 0.15)); border-radius: 25px; border: 2px solid rgba(0, 212, 255, 0.3);">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">${animalPersonality.emoji}</div>
+                    <h2 style="font-size: 2.5rem; margin-bottom: 15px; background: linear-gradient(45deg, #00d4ff, #ff006e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        당신은 "${animalPersonality.personality}" 타입!
+                    </h2>
+                    <p style="font-size: 1.3rem; color: #ddd; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                        ${animalPersonality.description}
+                    </p>
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; border-left: 4px solid #00d4ff;">
+                        <p style="color: #00d4ff; font-weight: 500; margin-bottom: 5px;">🎯 건강 관리 프로필</p>
+                        <p style="font-size: 1rem; color: #bbb;">
+                            ${data.age} ${data.gender === 'male' ? '남성' : '여성'} • 목적: ${purposeNames[data.purpose]}
+                        </p>
+                    </div>
+                </div>
+
+                ${bmiSection}
+                ${calorieSection}
+
+                <div class="recommendation-card">
+                    <h3>💊 ${animalPersonality.animal}에게 맞는 건강기능식품</h3>
+                    <p style="color: #888; margin-bottom: 25px;">${animalPersonality.adjective} 성격에 최적화된 개인 맞춤 영양소</p>
+                    <div class="supplement-grid">
+                        ${supplements.map(supplement => `
+                            <div class="supplement-item">
+                                <div style="font-weight: 600; margin-bottom: 8px; color: #00d4ff;">
+                                    ${supplement}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="recommendation-card">
+                    <h3>📋 맞춤 라이프스타일 조언</h3>
+                    <div style="display: grid; gap: 20px;">
+                        ${lifestyleAdvice.map(advice => `
+                            <div style="padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 15px; border-left: 4px solid ${advice.color};">
+                                <h4 style="color: ${advice.color}; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                    ${advice.icon} ${advice.title}
+                                </h4>
+                                <p style="color: #ccc; line-height: 1.6;">${advice.description}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                ${generateProbioticsRecommendation(supplements)}
+
+                <div style="margin-top: 40px; padding: 35px; background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 0, 110, 0.1)); border-radius: 20px; border: 1px solid rgba(0, 212, 255, 0.2);">
+                    <h4 style="color: #00d4ff; margin-bottom: 20px; font-size: 1.3rem; text-align: center;">
+                        🎊 친구들에게 나의 동물 타입 자랑하기!
+                    </h4>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="shareResult()" style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: #FEE500; color: #000; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease;">
+                            💬 카카오톡 공유
+                        </button>
+                        <button onclick="copyLink()" style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: linear-gradient(45deg, #00d4ff, #0099cc); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease;">
+                            🔗 링크 복사
+                        </button>
+                        <button onclick="downloadResult()" style="display: flex; align-items: center; gap: 10px; padding: 15px 25px; background: linear-gradient(45deg, #8338ec, #6d28d9); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: transform 0.2s ease;">
+                            📱 결과 저장
+                        </button>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="resetTest()" style="padding: 15px 30px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; color: #fff; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">
+                        🔄 다시 테스트하기
+                    </button>
+                </div>
+            `;
+        }
+
+        function generateProbioticsRecommendation(supplements) {
+            if (!supplements.includes('프로바이오틱스')) {
+                return '';
+            }
+
+            const probioticsProducts = [
+                {
+                    name: "비오플 프리미엄 유산균",
+                    brand: "한국야쿠르트",
+                    strain: "LGG + BB-12",
+                    cfu: "50억 CFU",
+                    price: "29,900원",
+                    features: ["특허받은 듀얼코팅", "장까지 살아서 도달", "면역력 증진"],
+                    rating: 4.7,
+                    color: "#e74c3c"
+                },
+                {
+                    name: "메가도필러스 유산균",
+                    brand: "솔가",
+                    strain: "LGG + 비피더스",
+                    cfu: "100억 CFU",
+                    price: "35,000원",
+                    features: ["미국 1위 브랜드", "냉장 보관 필요", "고함량 프로바이오틱스"],
+                    rating: 4.8,
+                    color: "#3498db"
+                },
+                {
+                    name: "듀오락 GOLD",
+                    brand: "셀트리온",
+                    strain: "듀얼 락토바실러스",
+                    cfu: "200억 CFU",
+                    price: "42,000원",
+                    features: ["국내 제약회사", "특허 균주", "위산 저항성"],
+                    rating: 4.6,
+                    color: "#f39c12"
+                },
+                {
+                    name: "닥터스베스트 프로바이오틱스",
+                    brand: "닥터스베스트",
+                    strain: "12가지 균주",
+                    cfu: "300억 CFU",
+                    price: "38,500원",
+                    features: ["다양한 균주", "아이허브 인기", "캡슐형"],
+                    rating: 4.5,
+                    color: "#27ae60"
+                }
+            ];
+
+            return `
+                <div class="recommendation-card" style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(255, 0, 110, 0.1)); border: 1px solid rgba(108, 99, 255, 0.3);">
+                    <h3>🦠 실제 추천 프로바이오틱스 제품</h3>
+                    <p style="color: #888; margin-bottom: 30px;">장 건강과 면역력 증진을 위한 검증된 유산균 제품들을 추천해드립니다</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        ${probioticsProducts.map(product => `
+                            <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 25px; transition: all 0.3s ease; position: relative; overflow: hidden;">
+                                <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: ${product.color};"></div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                    <div>
+                                        <h4 style="color: #ffffff; font-size: 1.1rem; font-weight: 600; margin-bottom: 5px;">${product.name}</h4>
+                                        <p style="color: #888; font-size: 0.9rem;">${product.brand}</p>
+                                    </div>
+                                    <div style="background: ${product.color}; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem; font-weight: bold;">
+                                        ⭐ ${product.rating}
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="color: #ccc; font-size: 0.9rem;">균주:</span>
+                                        <span style="color: #ffffff; font-size: 0.9rem; font-weight: 500;">${product.strain}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="color: #ccc; font-size: 0.9rem;">함량:</span>
+                                        <span style="color: ${product.color}; font-size: 0.9rem; font-weight: 600;">${product.cfu}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                        <span style="color: #ccc; font-size: 0.9rem;">가격:</span>
+                                        <span style="color: #ffffff; font-size: 1rem; font-weight: 600;">${product.price}</span>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 20px;">
+                                    <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 8px;">주요 특징:</p>
+                                    ${product.features.map(feature => `
+                                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; color: #ddd;">
+                                            • ${feature}
+                                        </div>
+                                    `).join('')}
+                                </div>
+
+                                <button style="width: 100%; padding: 12px; background: linear-gradient(45deg, ${product.color}, ${product.color}dd); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    🛒 제품 상세보기
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 12px; border-left: 4px solid #6c63ff;">
+                        <h4 style="color: #6c63ff; margin-bottom: 10px; font-size: 1rem;">💡 프로바이오틱스 복용 팁</h4>
+                        <ul style="color: #ccc; font-size: 0.9rem; line-height: 1.6; margin-left: 20px;">
+                            <li>식후 30분~1시간 후에 복용하는 것이 가장 효과적입니다</li>
+                            <li>항생제 복용 시에는 2시간 간격을 두고 섭취하세요</li>
+                            <li>냉장보관 제품은 반드시 냉장고에 보관해주세요</li>
+                            <li>최소 4주 이상 꾸준히 복용해야 효과를 볼 수 있습니다</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        
+            const advice = [];
+
+            // 식사 패턴 조언
+            if (data.meals === 'skip-breakfast') {
+                advice.push({
+                    icon: '🍽️',
+                    title: '식사 패턴 개선',
+                    description: '아침식사를 거르는 습관이 있으시군요. 간단한 아침식사라도 챙기시면 신진대사를 활성화하고 하루 종일 에너지를 유지할 수 있습니다.',
+                    color: '#ff006e'
+                });
+            } else if (data.meals === 'irregular') {
+                advice.push({
+                    icon: '⏰',
+                    title: '규칙적인 식사',
+                    description: '불규칙한 식사 패턴을 개선하여 일정한 시간에 식사하는 습관을 만들어보세요. 체내 리듬이 안정되고 소화기능이 향상됩니다.',
+                    color: '#ff006e'
+                });
+            }
+
+            // 운동 조언
+            if (data.exercise === 'none') {
+                advice.push({
+                    icon: '🏃‍♂️',
+                    title: '운동 시작하기',
+                    description: '하루 30분 걷기부터 시작해보세요. 엘리베이터 대신 계단 이용하기, 한 정거장 일찍 내려서 걷기 등 일상 속 작은 변화가 큰 차이를 만듭니다.',
+                    color: '#00d4ff'
+                });
+            } else if (data.exercise === 'heavy') {
+                advice.push({
+                    icon: '💪',
+                    title: '운동 강도 관리',
+                    description: '규칙적인 고강도 운동을 하고 계시는군요! 충분한 휴식과 영양 보충을 통해 부상을 예방하고 운동 효과를 극대화하세요.',
+                    color: '#00d4ff'
+                });
+            }
+
+            // 수면 조언
+            if (data.sleep === 'short' || data.sleep === 'poor') {
+                advice.push({
+                    icon: '😴',
+                    title: '수면 개선',
+                    description: '충분한 수면은 면역력 강화와 스트레스 관리에 필수적입니다. 취침 전 스마트폰 사용을 줄이고, 규칙적인 수면 패턴을 만들어보세요.',
+                    color: '#8338ec'
+                });
+            }
+
+            // 스트레스 조언
+            if (data.stress === 'high' || data.stress === 'very-high') {
+                advice.push({
+                    icon: '🧘‍♀️',
+                    title: '스트레스 관리',
+                    description: '높은 스트레스는 전반적인 건강에 악영향을 줍니다. 명상, 요가, 취미 활동 등을 통해 스트레스를 해소하고, 필요시 전문가의 도움을 받으세요.',
+                    color: '#27ae60'
+                });
+            }
+
+            // 목적별 조언
+            if (data.purpose === 'diet') {
+                advice.push({
+                    icon: '🥗',
+                    title: '건강한 다이어트',
+                    description: '극단적인 식단 제한보다는 균형 잡힌 영양소 섭취와 꾸준한 운동이 지속 가능한 체중 관리의 핵심입니다.',
+                    color: '#f39c12'
+                });
+            }
+
+            return advice;
+        }
+
+        function generateProbioticsRecommendation(supplements) {
+            if (!supplements.includes('프로바이오틱스')) {
+                return '';
+            }
+
+            const probioticsProducts = [
+                {
+                    name: "비오플 프리미엄 유산균",
+                    brand: "한국야쿠르트",
+                    strain: "LGG + BB-12",
+                    cfu: "50억 CFU",
+                    price: "29,900원",
+                    features: ["특허받은 듀얼코팅", "장까지 살아서 도달", "면역력 증진"],
+                    rating: 4.7,
+                    color: "#e74c3c"
+                },
+                {
+                    name: "메가도필러스 유산균",
+                    brand: "솔가",
+                    strain: "LGG + 비피더스",
+                    cfu: "100억 CFU",
+                    price: "35,000원",
+                    features: ["미국 1위 브랜드", "냉장 보관 필요", "고함량 프로바이오틱스"],
+                    rating: 4.8,
+                    color: "#3498db"
+                },
+                {
+                    name: "듀오락 GOLD",
+                    brand: "셀트리온",
+                    strain: "듀얼 락토바실러스",
+                    cfu: "200억 CFU",
+                    price: "42,000원",
+                    features: ["국내 제약회사", "특허 균주", "위산 저항성"],
+                    rating: 4.6,
+                    color: "#f39c12"
+                },
+                {
+                    name: "닥터스베스트 프로바이오틱스",
+                    brand: "닥터스베스트",
+                    strain: "12가지 균주",
+                    cfu: "300억 CFU",
+                    price: "38,500원",
+                    features: ["다양한 균주", "아이허브 인기", "캡슐형"],
+                    rating: 4.5,
+                    color: "#27ae60"
+                }
+            ];
+
+            return `
+                <div class="recommendation-card" style="background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(255, 0, 110, 0.1)); border: 1px solid rgba(108, 99, 255, 0.3);">
+                    <h3>🦠 실제 추천 프로바이오틱스 제품</h3>
+                    <p style="color: #888; margin-bottom: 30px;">장 건강과 면역력 증진을 위한 검증된 유산균 제품들을 추천해드립니다</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                        ${probioticsProducts.map(product => `
+                            <div style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 25px; transition: all 0.3s ease; position: relative; overflow: hidden;">
+                                <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: ${product.color};"></div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                    <div>
+                                        <h4 style="color: #ffffff; font-size: 1.1rem; font-weight: 600; margin-bottom: 5px;">${product.name}</h4>
+                                        <p style="color: #888; font-size: 0.9rem;">${product.brand}</p>
+                                    </div>
+                                    <div style="background: ${product.color}; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem; font-weight: bold;">
+                                        ⭐ ${product.rating}
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="color: #ccc; font-size: 0.9rem;">균주:</span>
+                                        <span style="color: #ffffff; font-size: 0.9rem; font-weight: 500;">${product.strain}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span style="color: #ccc; font-size: 0.9rem;">함량:</span>
+                                        <span style="color: ${product.color}; font-size: 0.9rem; font-weight: 600;">${product.cfu}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                        <span style="color: #ccc; font-size: 0.9rem;">가격:</span>
+                                        <span style="color: #ffffff; font-size: 1rem; font-weight: 600;">${product.price}</span>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 20px;">
+                                    <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 8px;">주요 특징:</p>
+                                    ${product.features.map(feature => `
+                                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; color: #ddd;">
+                                            • ${feature}
+                                        </div>
+                                    `).join('')}
+                                </div>
+
+                                <button style="width: 100%; padding: 12px; background: linear-gradient(45deg, ${product.color}, ${product.color}dd); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    🛒 제품 상세보기
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 12px; border-left: 4px solid #6c63ff;">
+                        <h4 style="color: #6c63ff; margin-bottom: 10px; font-size: 1rem;">💡 프로바이오틱스 복용 팁</h4>
+                        <ul style="color: #ccc; font-size: 0.9rem; line-height: 1.6; margin-left: 20px;">
+                            <li>식후 30분~1시간 후에 복용하는 것이 가장 효과적입니다</li>
+                            <li>항생제 복용 시에는 2시간 간격을 두고 섭취하세요</li>
+                            <li>냉장보관 제품은 반드시 냉장고에 보관해주세요</li>
+                            <li>최소 4주 이상 꾸준히 복용해야 효과를 볼 수 있습니다</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        function shareResult() {
+            const animalType = currentUserData.animalType || "건강한 라이프스타일";
+            const shareText = `🏥 HEALTHIO에서 나의 건강 동물 타입을 알아보았어요!\n\n결과: ${animalType}\n\n당신도 무료로 테스트해보세요! 👇`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'HEALTHIO 건강 타입 테스트',
+                    text: shareText,
+                    url: window.location.href
+                });
+            } else {
+                alert('공유 기능이 실행됩니다! (실제 환경에서는 SNS 공유 기능이 연동됩니다)');
+            }
+        }
+
+        function copyLink() {
+            const shareText = "HEALTHIO에서 동물 타입 테스트를 해보세요! " + window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('링크가 복사되었습니다!');
+                });
+            } else {
+                alert('링크 복사 기능을 사용할 수 없습니다.');
+            }
+        }
+
+        function downloadResult() {
+            alert('결과 저장 기능이 실행됩니다! (실제 환경에서는 PDF 다운로드 또는 이미지 저장 기능이 제공됩니다)');
+        }
+
+        function resetTest() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'block';
+            document.getElementById('healthForm').reset();
+            document.getElementById('form').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+
+        // 부드러운 스크롤 효과를 위한 함수
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 버튼 호버 효과
+        document.addEventListener('DOMContentLoaded', function() {
+            const style = document.createElement('style');
+            style.textContent = `
+                button:hover {
+                    transform: translateY(-2px) !important;
+                }
+                .supplement-item:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 15px 30px rgba(0, 212, 255, 0.2);
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

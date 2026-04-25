@@ -1,0 +1,13 @@
+{
+  "name": "그리다 아이엔티(INT)",
+  "bizNo": "880-23-01097",
+  "taxAmount": 735000,
+  "groupName": "8802301097",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:18:04.379Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:47:08.782Z",
+  "updatedAt": "2026-04-08T03:45:11.765Z"
+}

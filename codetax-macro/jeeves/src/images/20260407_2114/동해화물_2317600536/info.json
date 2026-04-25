@@ -1,0 +1,13 @@
+{
+  "name": "동해화물",
+  "bizNo": "231-76-00536",
+  "taxAmount": 1000000,
+  "groupName": "2317600536",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:18:08.045Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:47:10.258Z",
+  "updatedAt": "2026-04-08T03:45:32.665Z"
+}

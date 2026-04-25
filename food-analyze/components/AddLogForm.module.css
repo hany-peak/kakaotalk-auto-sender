@@ -1,0 +1,96 @@
+/* Form Container */
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Slightly smaller gap */
+  min-width: 350px; /* Adjust width as needed */
+}
+
+/* Form Title */
+.formTitle {
+  font-size: 1.25rem; 
+  font-weight: 600; 
+  text-align: center;
+  margin-bottom: 1rem; 
+}
+
+/* Individual Form Field */
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; 
+}
+
+.formField label {
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  color: #374151; 
+}
+
+.formField input[type="text"],
+.formField input[type="number"],
+.formField select,
+.formField textarea {
+  padding: 0.5rem 0.75rem; 
+  border: 1px solid #d1d5db; 
+  border-radius: 0.375rem; 
+  font-size: 0.875rem; 
+  width: 100%; 
+  box-sizing: border-box; 
+}
+
+.formField textarea {
+  resize: vertical; 
+}
+
+.formField input::placeholder {
+  color: #9ca3af; 
+}
+
+/* Style for displaying selected filename */
+.fileNameDisplay {
+  font-size: 0.75rem; /* text-xs */
+  color: #6b7280; /* text-gray-500 */
+  margin-top: 0.25rem; /* Add some space above the input */
+  margin-bottom: -0.25rem; /* Adjust spacing slightly */
+  font-style: italic;
+}
+
+/* Form Actions (Buttons) */
+.formActions {
+  display: flex;
+  justify-content: flex-end; 
+  gap: 0.75rem; 
+  margin-top: 1rem; 
+}
+
+.formActions button {
+  padding: 0.625rem 1.25rem; 
+  border-radius: 0.375rem; 
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Cancel Button */
+.cancelButton {
+  background-color: #e5e7eb; 
+  color: #374151; 
+  border-color: #d1d5db; 
+}
+
+.cancelButton:hover {
+  background-color: #d1d5db; 
+}
+
+/* Submit Button */
+.submitButton {
+  background-color: #2563eb; 
+  color: white;
+}
+
+.submitButton:hover {
+  background-color: #1d4ed8; 
+} 

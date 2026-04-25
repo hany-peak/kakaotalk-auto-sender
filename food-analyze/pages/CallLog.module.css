@@ -1,0 +1,196 @@
+/* Basic container and title styles */
+.container {
+  max-width: 90rem; 
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem; 
+}
+
+.title {
+  font-size: 1.875rem; 
+  font-weight: 700; 
+  text-align: center;
+  margin-bottom: 2rem; 
+}
+
+/* Toolbar Styles */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; /* Adjust as needed */
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem; 
+  padding: 0.75rem 0; 
+  border-bottom: 1px solid #e5e7eb; /* Optional: keep border from sourcing */
+}
+
+/* Table Styles */
+.tableContainer {
+  width: 100%;
+  overflow-x: auto; 
+  margin-bottom: 2rem; 
+}
+
+.table {
+  width: 100%;
+  min-width: 1100px; /* Increased min-width further for new columns */
+  border-collapse: collapse;
+  table-layout: auto; 
+}
+
+.table th,
+.table td {
+  border: 1px solid #e5e7eb; 
+  padding: 0.75rem 1rem; 
+  text-align: left;
+  vertical-align: middle; 
+  white-space: nowrap; 
+}
+
+.table th {
+  background-color: #f9fafb; 
+  font-weight: 600; 
+  color: #4b5563; 
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f9fafb; 
+}
+
+.table tbody tr:hover {
+  background-color: #f3f4f6; 
+}
+
+/* Specific styles for Call Log */
+.memoCell {
+  white-space: normal; 
+  min-width: 200px; 
+}
+
+.priceImage {
+  max-width: 100px; 
+  max-height: 60px; 
+  display: block; 
+  cursor: pointer; 
+}
+
+/* Button Styles (Add and Delete) */
+.addButton {
+  padding: 0.625rem 1.25rem; 
+  background-color: #16a34a; 
+  color: white;
+  border: none;
+  border-radius: 0.375rem; 
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out; 
+  white-space: nowrap; 
+}
+
+.addButton:hover {
+  background-color: #15803d; 
+}
+
+.deleteButton {
+  padding: 0.25rem 0.5rem; 
+  background-color: #fef2f2; 
+  color: #dc2626; 
+  border: 1px solid #fecaca; 
+  border-radius: 0.375rem; 
+  font-size: 0.75rem; 
+  font-weight: 500; 
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  line-height: 1; 
+}
+
+.deleteButton:hover {
+  background-color: #fee2e2; 
+  color: #b91c1c; 
+  border-color: #fca5a5; 
+}
+
+/* Filter Section Styles (Copied from Sourcing.module.css) */
+.filterSection {
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 1.75rem; 
+  padding: 0; 
+  margin-bottom: 0; 
+  flex-grow: 1; 
+  align-items: center; 
+}
+
+.filterItem {
+  display: flex;
+  align-items: center; 
+  gap: 0.5rem; 
+}
+
+.filterItem label {
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  color: #374151; 
+  white-space: nowrap; 
+  flex-shrink: 0; 
+}
+
+.filterItem input[type="text"],
+.filterItem input[type="number"],
+.filterItem select {
+  padding: 0.5rem 0.75rem; 
+  border: 1px solid #d1d5db; 
+  border-radius: 0.375rem; 
+  font-size: 0.875rem; 
+  width: auto; 
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; 
+}
+
+.filterItem input[type="text"]:focus,
+.filterItem input[type="number"]:focus,
+.filterItem select:focus {
+  outline: none;
+  border-color: #2563eb; 
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); 
+}
+
+.filterItem input::placeholder {
+  color: #9ca3af; 
+}
+
+/* Styles for the image inside the modal */
+.modalImage {
+  display: block; /* Remove extra space */
+  max-width: 100%; /* Ensure image fits within modal width */
+  max-height: 80vh; /* Limit image height based on viewport height */
+  margin: 0 auto; /* Center image horizontally */
+}
+
+/* Utility class to hide elements */
+.hidden {
+  display: none;
+}
+
+/* Style for the text shown when image fails to load */
+.imageError {
+  font-size: 0.75rem;
+  color: #ef4444; /* text-red-500 */
+  font-style: italic;
+}
+
+/* Style for general error messages */
+.errorText {
+  color: #ef4444; /* text-red-500 */
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #fef2f2; /* bg-red-50 */
+  border: 1px solid #fecaca; /* border-red-200 */
+  border-radius: 0.375rem;
+} 

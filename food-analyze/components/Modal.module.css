@@ -1,0 +1,43 @@
+/* Modal Overlay: Covers the entire screen */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+/* Modal Content: The actual modal box */
+.modalContent {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+  position: relative;
+  max-width: 90%; /* Prevent modal from being too wide on large screens */
+  max-height: 90vh; /* Limit height and allow scrolling if needed */
+  overflow-y: auto; /* Enable vertical scrolling for tall content */
+}
+
+/* Close Button */
+.closeButton {
+  position: absolute;
+  top: 0.75rem; /* Adjust as needed */
+  right: 0.75rem; /* Adjust as needed */
+  background: none;
+  border: none;
+  font-size: 1.5rem; /* Larger size for easy clicking */
+  line-height: 1; 
+  color: #6b7280; /* text-gray-500 */
+  cursor: pointer;
+  padding: 0.25rem; /* Add some padding around the 'x' */
+}
+
+.closeButton:hover {
+  color: #111827; /* text-gray-900 */
+} 

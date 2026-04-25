@@ -1,0 +1,13 @@
+{
+  "name": "이음",
+  "bizNo": "779-55-00580",
+  "taxAmount": 1440000,
+  "groupName": "7795500580",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:18:14.248Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:47:17.807Z",
+  "updatedAt": "2026-04-08T03:48:05.142Z"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "다 테크",
+  "bizNo": "769-50-00119",
+  "taxAmount": 8690000,
+  "groupName": "7695000119",
+  "taxList": [],
+  "status": "done",
+  "savedAt": "2026-04-07T12:16:42.312Z",
+  "ocrStatus": "warn",
+  "ocrNote": "1천원 차이",
+  "ocrVerifiedAt": "2026-04-07T12:47:09.404Z",
+  "updatedAt": "2026-04-08T02:56:41.238Z"
+}

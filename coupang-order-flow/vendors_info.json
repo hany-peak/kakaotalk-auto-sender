@@ -1,0 +1,32 @@
+[
+  {
+    "file": "1.index.js",
+    "key": "_버니즈",
+    "name": "버니즈",
+    "isUsed": false
+  },
+  {
+    "file": "2.index.js",
+    "key": "_월도_",
+    "name": "월억도전",
+    "isUsed": false
+  },
+  {
+    "file": "3.index.js",
+    "key": "_파밍_",
+    "name": "파밍",
+    "isUsed": true
+  },
+  {
+    "file": "4.index.js",
+    "key": "_마_삼배체굴",
+    "name": "통영해풍",
+    "isUsed": true
+  },
+  {
+    "file": "5.index.js",
+    "key": "_마_",
+    "name": "마스터",
+    "isUsed": true
+  }
+] 

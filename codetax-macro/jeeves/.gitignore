@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# scheduler + thebill-sync runtime data
+logs/scheduler-state.json
+logs/thebill-sync/
+logs/thebill-sync-sessions/
+
+# new-client plugin submission store
+server/data/

@@ -1,0 +1,105 @@
+/* Form Container */
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Space between sections (title, grid, actions) */
+  min-width: 400px; /* Minimum width for the form */
+}
+
+/* Form Title */
+.formTitle {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600; /* font-semibold */
+  text-align: center;
+  margin-bottom: 0.5rem; /* Add some space below title */
+}
+
+/* Grid for Form Fields */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two columns */
+  gap: 1rem; /* Space between fields */
+}
+
+/* Individual Form Field */
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem; /* Space between label and input */
+}
+
+.formField label {
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  color: #374151; /* text-gray-700 */
+}
+
+.formField input[type="text"],
+.formField input[type="number"],
+.formField select,
+.formField textarea {
+  padding: 0.5rem 0.75rem; /* py-2 px-3 */
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.375rem; /* rounded-md */
+  font-size: 0.875rem; /* text-sm */
+  width: 100%; /* Make inputs fill their container */
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
+}
+
+.formField textarea {
+  resize: vertical; /* Allow vertical resizing */
+}
+
+.formField input::placeholder {
+  color: #9ca3af; /* placeholder-gray-400 */
+}
+
+/* Required field indicator */
+.required {
+  color: #ef4444; /* text-red-500 */
+  margin-left: 0.125rem;
+}
+
+/* Field spanning full width */
+.fullWidth {
+  grid-column: span 2; /* Make this field span both columns */
+}
+
+/* Form Actions (Buttons) */
+.formActions {
+  display: flex;
+  justify-content: flex-end; /* Align buttons to the right */
+  gap: 0.75rem; /* Space between buttons */
+  margin-top: 1rem; /* Add space above the buttons */
+}
+
+.formActions button {
+  padding: 0.625rem 1.25rem; /* py-2.5 px-5 */
+  border-radius: 0.375rem; /* rounded-md */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Cancel Button */
+.cancelButton {
+  background-color: #e5e7eb; /* bg-gray-200 */
+  color: #374151; /* text-gray-700 */
+  border-color: #d1d5db; /* border-gray-300 */
+}
+
+.cancelButton:hover {
+  background-color: #d1d5db; /* bg-gray-300 */
+}
+
+/* Submit Button */
+.submitButton {
+  background-color: #2563eb; /* bg-blue-600 */
+  color: white;
+}
+
+.submitButton:hover {
+  background-color: #1d4ed8; /* bg-blue-700 */
+} 

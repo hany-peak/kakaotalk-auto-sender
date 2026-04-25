@@ -1,0 +1,13 @@
+{
+  "name": "우찬 출동",
+  "bizNo": "740-05-03323",
+  "taxAmount": 1311000,
+  "groupName": "7400503323",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:20:11.712Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:47:17.050Z",
+  "updatedAt": "2026-04-08T03:47:40.130Z"
+}

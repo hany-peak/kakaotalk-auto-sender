@@ -1,0 +1,13 @@
+{
+  "name": "머니봄",
+  "bizNo": "744-36-00088",
+  "taxAmount": 832000,
+  "groupName": "7443600088",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:14:26.611Z",
+  "ocrStatus": "warn",
+  "ocrNote": "1천원 차이",
+  "ocrVerifiedAt": "2026-04-07T12:47:11.297Z",
+  "updatedAt": "2026-04-08T03:45:49.364Z"
+}

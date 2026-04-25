@@ -1,0 +1,13 @@
+{
+  "name": "리파인드 시공",
+  "bizNo": "516-69-00569",
+  "taxAmount": 1031000,
+  "groupName": "5166900569",
+  "taxList": [],
+  "status": "skipped",
+  "savedAt": "2026-04-07T12:20:32.151Z",
+  "ocrStatus": "ok",
+  "ocrNote": null,
+  "ocrVerifiedAt": "2026-04-07T12:55:26.114Z",
+  "updatedAt": "2026-04-08T03:45:45.185Z"
+}
