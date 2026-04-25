@@ -27,8 +27,11 @@ const tdC: React.CSSProperties = {
   textAlign: 'center',
 };
 
-export function ContractMain2({ retroactiveFee }: TemplateProps) {
-  const feeText = retroactiveFee && retroactiveFee.trim() !== '' ? retroactiveFee : '_______';
+export function ContractMain2({ record }: TemplateProps) {
+  const feeText =
+    typeof record.bookkeepingFee === 'number'
+      ? record.bookkeepingFee.toLocaleString('ko-KR')
+      : '_______';
   return (
     <PageFrame margin={{ top: '12mm', right: '14mm', bottom: '12mm', left: '14mm' }}>
       <div style={clauseTitle}>제 1 조 (세무서비스의 범위)</div>

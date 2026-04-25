@@ -1,8 +1,21 @@
 import * as React from 'react';
 import { PageFrame } from './shared/PageFrame';
-import { DEFAULT_AGENT, type TemplateProps } from './shared/TemplateProps';
+import type { TemplateProps } from './shared/TemplateProps';
 
 const TEAL_DARK = '#234C50';
+
+const SUNIM = {
+  bizRegNumber: '306-29-93669',
+  industry1: '전문,과학 및 기술서비스업',
+  industry2: '세무사',
+  companyName: '코드세무회계',
+  address: '서울 강남구 테헤란로1길 28-11 4층 4035호',
+  homepage: 'https://codetax.co.kr/',
+  phone: '010-7276-2430',
+  fax: '0506-200-1788',
+  email: 'help@codetax.co.kr',
+  representative: '정 주 희 세 무 사',
+};
 
 const CONTRACT_TYPES: Array<{ label: string; checked?: boolean }> = [
   { label: '기장대리', checked: true },
@@ -37,8 +50,8 @@ const tdSubLabel: React.CSSProperties = {
   textAlign: 'center',
 };
 
-export function ContractMain1({ record, agent = DEFAULT_AGENT }: TemplateProps) {
-  const sunim = agent;
+export function ContractMain1({ record }: TemplateProps) {
+  const sunim = SUNIM;
   return (
     <PageFrame margin={{ top: '18mm', right: '18mm', bottom: '18mm', left: '18mm' }}>
       <h1
