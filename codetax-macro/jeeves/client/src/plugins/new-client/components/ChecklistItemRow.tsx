@@ -31,8 +31,7 @@ function formatKst(iso: string | undefined): string {
   return `${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')} ${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-export function ChecklistItemRow({ def, state, pending, clientId, record, onUpdate, onDropboxUpdate }: Props) {
-  const recordOpenDate = record.openDate;
+export function ChecklistItemRow({ def, state, pending, clientId, onUpdate, onDropboxUpdate }: Props) {
   const done = isItemDone(def, state);
   const isDropbox = def.key === 'dropboxFolder';
   const [localValue, setLocalValue] = useState<string>(state?.value ?? '');
@@ -93,7 +92,7 @@ export function ChecklistItemRow({ def, state, pending, clientId, record, onUpda
   async function handleWehagoRegister() {
     setErr(null);
     try {
-      const res = await registerWehago(recordOpenDate ?? '');
+      const res = await registerWehago();
       await onUpdate({ status: res.state.status });
     } catch (e: any) {
       setErr(e.message ?? 'wehago register failed');
