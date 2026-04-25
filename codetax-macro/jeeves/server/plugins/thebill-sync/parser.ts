@@ -35,7 +35,8 @@ export function normalizeBizNo(raw: string | number): string {
 export function classifyStatus(raw: string): StatusClass {
   const s = (raw ?? '').trim();
   if (s.includes('성공') || s.includes('정상')) return 'success';
-  if (s.includes('실패')) return 'failure';
+  // 더빌 status 패턴: "출금실패 ...", "미납", "출금불능" 모두 재출금 대상.
+  if (s.includes('실패') || s.includes('미납') || s.includes('출금불능')) return 'failure';
   return 'unknown';
 }
 

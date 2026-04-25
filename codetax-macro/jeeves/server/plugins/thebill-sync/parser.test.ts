@@ -27,9 +27,15 @@ test('classifyStatus maps success values', () => {
 test('classifyStatus maps failure values', () => {
   assert.equal(classifyStatus('승인실패'), 'failure');
   assert.equal(classifyStatus('출금실패'), 'failure');
+  assert.equal(classifyStatus('출금실패 [기타수취불가] [자동재출금]'), 'failure');
+  assert.equal(classifyStatus('미납'), 'failure');
+  assert.equal(classifyStatus('출금불능'), 'failure');
+  assert.equal(classifyStatus('미납(출금불능)'), 'failure');
 });
 
-test('classifyStatus returns unknown for unrecognized', () => {
-  assert.equal(classifyStatus('대기중'), 'unknown');
+test('classifyStatus returns unknown for in-progress states', () => {
+  assert.equal(classifyStatus('대기'), 'unknown');
+  assert.equal(classifyStatus('출금등록중'), 'unknown');
+  assert.equal(classifyStatus('출금중 [자동출금]'), 'unknown');
   assert.equal(classifyStatus(''), 'unknown');
 });
