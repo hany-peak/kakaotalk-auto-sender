@@ -28,9 +28,18 @@ test('classifyStatus maps failure values', () => {
   assert.equal(classifyStatus('승인실패'), 'failure');
   assert.equal(classifyStatus('출금실패'), 'failure');
   assert.equal(classifyStatus('출금실패 [기타수취불가] [자동재출금]'), 'failure');
+  // 더빌 실패 사유 변종 — 모두 '실패' 키워드 매칭
+  assert.equal(classifyStatus('출금실패 잔액부족 [자동재출금]'), 'failure');
+  assert.equal(classifyStatus('출금실패 기타수취불가 [자동재출금]'), 'failure');
+  assert.equal(classifyStatus('출금실패 출금중지 [자동재출금]'), 'failure');
   assert.equal(classifyStatus('미납'), 'failure');
   assert.equal(classifyStatus('출금불능'), 'failure');
   assert.equal(classifyStatus('미납(출금불능)'), 'failure');
+});
+
+test('classifyStatus: 재출금중지 단독은 unknown (수동 검토)', () => {
+  // standalone "재출금중지" 만 있는 row — failure 컨텍스트 없음, manual review.
+  assert.equal(classifyStatus('재출금중지'), 'unknown');
 });
 
 test('classifyStatus returns unknown for in-progress states', () => {

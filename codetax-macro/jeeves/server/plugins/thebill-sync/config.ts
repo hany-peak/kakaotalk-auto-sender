@@ -17,6 +17,7 @@ export interface ThebillConfig {
   airtableFeeAmountField: string;
   airtableFeeStatusField: string;
   airtableFeeNameField: string;
+  airtableFeeRemarkField: string;
   // 빈 문자열이면 동적 [N월] 뷰. 명시되면 그 뷰를 항상 사용 (scope-무관 뷰 권장).
   airtableFeeViewName: string;
   // Slack 알림은 optional — 비어있으면 알림만 skip, 동기화는 계속 진행.
@@ -43,6 +44,7 @@ export function loadConfig(): ThebillConfig {
     airtableFeeAmountField: process.env.AIRTABLE_FEE_AMOUNT_FIELD ?? '기장료',
     airtableFeeStatusField: process.env.AIRTABLE_FEE_STATUS_FIELD ?? '출금상태',
     airtableFeeNameField: process.env.AIRTABLE_FEE_NAME_FIELD ?? '거래처명',
+    airtableFeeRemarkField: process.env.AIRTABLE_FEE_REMARK_FIELD ?? '비고',
   };
   const missing = Object.entries(required)
     .filter(([, v]) => !v)

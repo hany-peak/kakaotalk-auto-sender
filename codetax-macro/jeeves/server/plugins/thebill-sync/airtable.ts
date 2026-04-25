@@ -53,10 +53,6 @@ export async function updateFeeTable(
   for (const row of rows) {
     const cls = classifyStatus(row.status);
     const newStatus = decideStatus(cls, mode);
-    if (newStatus === null) {
-      result.skipped += 1;
-      continue;
-    }
 
     const bizNo = normalizeBizNo(row.bizNo);
     try {
@@ -73,12 +69,20 @@ export async function updateFeeTable(
         continue;
       }
 
-      await table.update(records[0].id, {
-        [cfg.airtableFeeStatusField]: newStatus,
-      });
+      // 비고: success 면 비움 (정상화), 그 외 (failure/unknown) 면 더빌 raw status 그대로.
+      // 출금상태: success/failure 만 변경, unknown 은 그대로 둠 (출금중 등 진행 중 상태 보존).
+      const updates: Record<string, string> = {
+        [cfg.airtableFeeRemarkField]: cls === 'success' ? '' : row.status,
+      };
+      if (newStatus !== null) {
+        updates[cfg.airtableFeeStatusField] = newStatus;
+      }
+
+      await table.update(records[0].id, updates);
 
       if (cls === 'success') result.successUpdated += 1;
-      else result.failureUpdated += 1;
+      else if (cls === 'failure') result.failureUpdated += 1;
+      else result.skipped += 1; // unknown — 비고만 갱신, 출금상태 보존
     } catch (err) {
       result.errors.push({
         bizNo,
