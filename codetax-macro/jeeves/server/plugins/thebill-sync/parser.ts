@@ -13,7 +13,7 @@ export type StatusClass = 'success' | 'failure' | 'unknown';
 const HEADER_CANDIDATES = {
   bizNo: ['사업자번호', '주민(사업자)번호', '주민번호', '식별번호'],
   memberName: ['회원명', '고객명', '업체명'],
-  amount: ['금액', '청구금액', '출금액'],
+  amount: ['금액', '청구금액', '출금액', '납부금액'],
   status: ['상태', '결과', '처리상태'],
   drawDate: ['출금일', '처리일', '결제일'],
 };
