@@ -15,6 +15,9 @@ export interface PaymentReminderConfig {
   statusField: string;
   nameField: string;
   bankAccount: string;
+  // 빈 문자열이면 동적으로 [N월] 뷰 사용. 명시되면 그 뷰를 항상 사용
+  // (기장↔신고대리 scope 변경된 거래처가 빠지지 않도록 scope-무관 뷰 필요).
+  viewName: string;
 }
 
 export class PaymentReminderConfigError extends Error {
@@ -39,5 +42,8 @@ export function loadConfig(): PaymentReminderConfig {
     .filter(([, v]) => !v)
     .map(([k]) => k);
   if (missing.length > 0) throw new PaymentReminderConfigError(missing);
-  return required as PaymentReminderConfig;
+  return {
+    ...(required as Omit<PaymentReminderConfig, 'viewName'>),
+    viewName: process.env.AIRTABLE_FEE_VIEW_NAME ?? '',
+  };
 }

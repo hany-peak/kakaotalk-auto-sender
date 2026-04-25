@@ -17,6 +17,8 @@ export interface ThebillConfig {
   airtableFeeAmountField: string;
   airtableFeeStatusField: string;
   airtableFeeNameField: string;
+  // 빈 문자열이면 동적 [N월] 뷰. 명시되면 그 뷰를 항상 사용 (scope-무관 뷰 권장).
+  airtableFeeViewName: string;
   slackBotToken: string;
   slackChannel: string;
 }
@@ -47,7 +49,10 @@ export function loadConfig(): ThebillConfig {
     .filter(([, v]) => !v)
     .map(([k]) => k);
   if (missing.length > 0) throw new ThebillConfigError(missing);
-  return required as ThebillConfig;
+  return {
+    ...(required as Omit<ThebillConfig, 'airtableFeeViewName'>),
+    airtableFeeViewName: process.env.AIRTABLE_FEE_VIEW_NAME ?? '',
+  };
 }
 
 export const STATE_FILE = path.resolve(

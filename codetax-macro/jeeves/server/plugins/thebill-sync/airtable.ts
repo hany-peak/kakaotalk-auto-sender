@@ -39,7 +39,7 @@ export async function updateFeeTable(
   const cfg = cfgOverride ?? loadConfig();
   const base = new Airtable({ apiKey: cfg.airtableFeePat }).base(cfg.airtableFeeBaseId);
   const table = base(cfg.airtableFeeTableId);
-  const view = currentMonthView();
+  const view = cfg.airtableFeeViewName || currentMonthView();
 
   const result: UpdateResult = {
     total: rows.length,

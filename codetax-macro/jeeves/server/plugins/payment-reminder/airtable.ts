@@ -30,7 +30,7 @@ export async function fetchUnpaid(
 
   const records = await table
     .select({
-      view: previousMonthView(now),
+      view: cfg.viewName || previousMonthView(now),
       filterByFormula: `{${cfg.statusField}}='출금실패'`,
     })
     .all();
