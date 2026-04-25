@@ -127,6 +127,32 @@ async function navigateAndDownload(
     .first()
     .click({ timeout: 5_000 });
 
+  // 더빌은 [엑셀다운로드] 클릭 후 "엑셀다운로드 이력 등록" 모달을 띄움.
+  // 작업내용 select 첫 옵션 선택 후 [등록] 클릭해야 실제 다운로드 시작.
+  try {
+    await page
+      .locator('text=엑셀다운로드 이력 등록')
+      .waitFor({ state: 'visible', timeout: 10_000 });
+    ctx.log('[thebill-sync] 다운로드 이력 등록 모달 감지 — 작업내용 선택 + 등록');
+
+    // 모달의 select (visible 한 것 중 마지막 = 가장 최근 등장) 의 첫 진짜 옵션 선택.
+    const modalSelect = page.locator('select:visible').last();
+    if ((await modalSelect.count()) > 0) {
+      await modalSelect.selectOption({ index: 1 }).catch((e) => {
+        ctx.log(`[thebill-sync] 작업내용 select 실패 (계속 진행): ${e.message}`);
+      });
+    }
+
+    // [등록] 버튼 클릭. modal context 에서 visible 한 등록 버튼 첫 번째.
+    await page
+      .locator('input[type="button"][value="등록"]:visible, button:visible:has-text("등록")')
+      .first()
+      .click({ timeout: 5_000 });
+  } catch (e: any) {
+    // 모달이 안 뜨는 케이스 (이미 다운로드가 직접 시작됐을 수도) — 진단 로그만 남기고 계속.
+    ctx.log(`[thebill-sync] 다운로드 모달 처리 skip: ${e.message}`);
+  }
+
   const TIMEOUT_MS = 60_000;
   const timeoutErr = new Promise<never>((_, reject) =>
     setTimeout(
