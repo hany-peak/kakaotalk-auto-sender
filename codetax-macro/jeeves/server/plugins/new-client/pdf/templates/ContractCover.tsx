@@ -1,9 +1,9 @@
 import * as React from 'react';
-import * as path from 'node:path';
 import { PageFrame } from './shared/PageFrame';
+import { assetDataUrl } from './shared/asset';
 import type { TemplateProps } from './shared/TemplateProps';
 
-const LOGO_WIDE_URL = `file://${path.join(__dirname, '..', 'assets', 'logo-wide.png')}`;
+const LOGO_WIDE_URL = assetDataUrl('logo-wide.png');
 
 export function ContractCover(_props: TemplateProps) {
   return (

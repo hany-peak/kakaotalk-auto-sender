@@ -1,9 +1,9 @@
 import * as React from 'react';
-import * as path from 'node:path';
 import { PageFrame } from './shared/PageFrame';
+import { assetDataUrl } from './shared/asset';
 import type { TemplateProps } from './shared/TemplateProps';
 
-const STAMP_URL = `file://${path.join(__dirname, '..', 'assets', 'stamp.png')}`;
+const STAMP_URL = assetDataUrl('stamp.png');
 
 const clauseTitle: React.CSSProperties = {
   fontWeight: 700,
