@@ -51,15 +51,18 @@ async function ensureLoggedIn(page: Page, ctx: ServerContext): Promise<void> {
   ctx.log(`[thebill-sync] login success: ${page.url()}`);
 }
 
-// `text=자동이체` 클릭 후 좌측 sub-menu 가 렌더링될 때까지 대기.
+// 자동이체 모듈 URL 로 직접 이동 — 세션 복원 후 어느 페이지에 있는지 불확실해
+// 메뉴 클릭이 실패할 수 있어, probe 로 확인된 모듈 진입 URL 을 직접 goto.
 async function openCmsModule(page: Page, ctx: ServerContext): Promise<void> {
   ctx.log('[thebill-sync] open [자동이체] module');
-  await page.getByText('자동이체', { exact: true }).first().click({ timeout: 10_000 });
-  // 자동이체 모듈 left-nav 의 대표 메뉴들이 보이면 진입 완료로 판정.
+  await page.goto('https://www.thebill.co.kr/cms2/defaultSummary.tb?menucd=CMS', {
+    waitUntil: 'domcontentloaded',
+  });
+  // sub-menu 의 대표 메뉴 (출금결과조회) 가 보이면 진입 완료로 판정.
   await page
     .getByText('출금결과조회', { exact: true })
     .first()
-    .waitFor({ state: 'visible', timeout: 10_000 });
+    .waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 async function navigateAndDownload(
