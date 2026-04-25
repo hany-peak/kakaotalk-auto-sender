@@ -37,11 +37,10 @@ const td: React.CSSProperties = {
 };
 const tdLabel: React.CSSProperties = {
   ...td,
-  width: '24mm',
+  width: '28mm',
   fontWeight: 600,
   textAlign: 'center',
-  letterSpacing: '0.4em',
-  paddingLeft: '4mm',
+  whiteSpace: 'nowrap',
 };
 const tdSubLabel: React.CSSProperties = {
   ...td,
