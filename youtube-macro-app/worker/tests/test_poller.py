@@ -142,3 +142,63 @@ def test_recover_stale_resets_to_pending(deps):
         call("s1", 상태=STATUS_PENDING),
         call("s2", 상태=STATUS_PENDING),
     ]
+
+
+def test_process_card_reuses_card_no_on_retry(deps, mocker, tmp_path: Path):
+    """When a card already has card_no (it's a retry), do NOT allocate a new number."""
+    notion, drive, cfg, logger = deps
+    notion.find_duplicate.return_value = None
+    mocker.patch("movie_shorts_worker.poller.ytdlp_extract_meta",
+                 return_value=VideoMeta(title="t", uploader="u", duration=10, ext="mp4"))
+    mp4 = tmp_path / "out.mp4"; mp4.write_bytes(b"x")
+    mocker.patch("movie_shorts_worker.poller.ytdlp_download", return_value=mp4)
+    drive.ensure_folder.return_value = DriveItem(id="x", web_view_link="https://d/x")
+    drive.upload.return_value = DriveItem(id="f", web_view_link="https://d/f")
+
+    # Card already has card_no=42 from a previous claim
+    retry_card = Card(id="c1", last_edited_time="2026-04-28T00:00:00.000Z", title="",
+                      source_url="https://x", status=STATUS_PENDING, card_no=42, retries=1, raw={})
+
+    p = Poller(notion=notion, drive=drive, config=cfg, logger=logger)
+    p.process_one_card(retry_card)
+
+    notion.claim.assert_called_once_with("c1", card_no=42)
+    notion.find_max_card_no.assert_not_called()
+
+
+def test_process_card_cleans_up_temp_on_drive_failure(deps, mocker, tmp_path: Path):
+    notion, drive, cfg, logger = deps
+    notion.find_duplicate.return_value = None
+    notion.find_max_card_no.return_value = 0
+    mocker.patch("movie_shorts_worker.poller.ytdlp_extract_meta",
+                 return_value=VideoMeta(title="t", uploader="u", duration=10, ext="mp4"))
+    # Download succeeds — file exists on disk
+    card_dir = tmp_path / "c1"
+    card_dir.mkdir()
+    mp4 = card_dir / "out.mp4"; mp4.write_bytes(b"x")
+    mocker.patch("movie_shorts_worker.poller.ytdlp_download", return_value=mp4)
+    # Drive upload blows up
+    drive.ensure_folder.return_value = DriveItem(id="x", web_view_link="https://d/x")
+    drive.upload.side_effect = RuntimeError("drive 5xx")
+
+    p = Poller(notion=notion, drive=drive, config=cfg, logger=logger)
+    p.process_one_card(_card())
+
+    # The temp file/dir should have been cleaned up despite the failure
+    assert not mp4.exists()
+    assert not card_dir.exists()
+
+
+def test_handle_failure_swallows_notion_outage(deps, mocker):
+    """If notion.update inside _handle_failure raises, the worker logs and continues — does not propagate."""
+    notion, drive, cfg, logger = deps
+    notion.find_duplicate.return_value = None
+    notion.find_max_card_no.return_value = 0
+    mocker.patch("movie_shorts_worker.poller.ytdlp_extract_meta",
+                 side_effect=RuntimeError("yt-dlp boom"))
+    notion.update.side_effect = RuntimeError("notion 429")
+
+    p = Poller(notion=notion, drive=drive, config=cfg, logger=logger)
+    # Should NOT raise, even though both yt-dlp and notion fail
+    p.process_one_card(_card())
+    logger.exception.assert_called()

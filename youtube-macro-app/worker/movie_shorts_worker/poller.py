@@ -75,9 +75,17 @@ class Poller:
                 self.process_one_card(card)
 
     def recover_stale(self) -> None:
-        for card in self.notion.find_stale_in_progress(threshold_minutes=5):
-            self.log.info("recovering stale card %s back to pending", card.id)
-            self.notion.update(card.id, 상태=STATUS_PENDING)
+        try:
+            stale = self.notion.find_stale_in_progress(threshold_minutes=5)
+        except Exception:
+            self.log.exception("recover_stale: notion query failed")
+            return
+        for card in stale:
+            try:
+                self.log.info("recovering stale card %s back to pending", card.id)
+                self.notion.update(card.id, 상태=STATUS_PENDING)
+            except Exception:
+                self.log.exception("recover_stale: failed to update %s", card.id)
 
     def process_one_card(self, card: Card) -> None:
         # 1. duplicate check
@@ -89,9 +97,13 @@ class Poller:
             self.notion.update(card.id, 상태=STATUS_REJECTED, 에러_메시지=msg)
             return
 
-        # 2. claim
-        next_no = self.notion.find_max_card_no() + 1
+        # 2. claim — re-use existing card_no on retry to keep folder name stable
+        if card.card_no is None:
+            next_no = self.notion.find_max_card_no() + 1
+        else:
+            next_no = card.card_no
         self.notion.claim(card.id, card_no=next_no)
+        card_tmp = self.cfg.tmp_dir / card.id
 
         try:
             # 3. metadata + auto title
@@ -103,7 +115,6 @@ class Poller:
             title_for_folder = card.title or meta.title
 
             # 4. download
-            card_tmp = self.cfg.tmp_dir / card.id
             last_emit = [0.0]
             def progress(pct: int):
                 now = time.monotonic()
@@ -129,9 +140,10 @@ class Poller:
                 다운로드_진행률="done",
                 처리_완료_시각=_now_iso(),
             )
-            self._cleanup(card_tmp)
         except Exception as e:
             self._handle_failure(card, e)
+        finally:
+            self._cleanup(card_tmp)
 
     # ---------- internals ----------
 
@@ -144,20 +156,24 @@ class Poller:
     def _handle_failure(self, card: Card, exc: Exception) -> None:
         new_retries = card.retries + 1
         self.log.exception("card %s failed (attempt %d): %s", card.id, new_retries, exc)
+        common = {
+            "재시도_횟수": new_retries,
+            "에러_메시지": str(exc)[:500],
+            "다운로드_진행률": "",
+        }
         if new_retries >= self.cfg.max_retries:
-            self.notion.update(
-                card.id,
-                상태=STATUS_FAILED,
-                재시도_횟수=new_retries,
-                에러_메시지=str(exc)[:500],
-            )
+            self._safe_notion_update(card.id, 상태=STATUS_FAILED, **common)
         else:
-            self.notion.update(
-                card.id,
-                상태=STATUS_PENDING,
-                재시도_횟수=new_retries,
-                에러_메시지=str(exc)[:500],
-            )
+            self._safe_notion_update(card.id, 상태=STATUS_PENDING, **common)
+
+    def _safe_notion_update(self, card_id: str, **fields) -> None:
+        """notion.update with exception swallowing — used by failure paths so a
+        Notion outage cannot leave a card stuck in 다운로드중. The next periodic
+        recover_stale() call will clean up if this also fails."""
+        try:
+            self.notion.update(card_id, **fields)
+        except Exception:
+            self.log.exception("notion.update failed for card %s; will rely on recover_stale", card_id)
 
     def _cleanup(self, path: Path) -> None:
         if not path.exists():
