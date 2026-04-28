@@ -59,11 +59,25 @@ def test_find_duplicate_returns_none(mocker):
 
 def test_find_max_card_no(mocker):
     raw = MagicMock()
-    raw.databases.query.return_value = {"results": [
-        _page("a", card_no=3), _page("b", card_no=7), _page("c", card_no=None),
-    ]}
+    # With the is_not_empty filter + descending sort + page_size=1,
+    # Notion returns the single max-card_no row.
+    raw.databases.query.return_value = {"results": [_page("a", card_no=7)]}
     n = NotionWrapper(client=raw, db_id="db")
     assert n.find_max_card_no() == 7
+
+    # Verify the query was sent with the right filter and pagination
+    call = raw.databases.query.call_args.kwargs
+    assert call["filter"]["property"] == "카드번호"
+    assert call["filter"]["number"] == {"is_not_empty": True}
+    assert call["sorts"][0]["direction"] == "descending"
+    assert call["page_size"] == 1
+
+
+def test_find_max_card_no_returns_zero_when_empty(mocker):
+    raw = MagicMock()
+    raw.databases.query.return_value = {"results": []}
+    n = NotionWrapper(client=raw, db_id="db")
+    assert n.find_max_card_no() == 0
 
 
 def test_find_stale_in_progress(mocker):

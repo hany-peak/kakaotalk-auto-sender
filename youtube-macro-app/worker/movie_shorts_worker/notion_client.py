@@ -98,15 +98,14 @@ class NotionWrapper:
     def find_max_card_no(self) -> int:
         res = self.client.databases.query(
             database_id=self.db_id,
+            filter={"property": "카드번호", "number": {"is_not_empty": True}},
             sorts=[{"property": "카드번호", "direction": "descending"}],
-            page_size=10,
+            page_size=1,
         )
-        max_no = 0
-        for p in res["results"]:
-            card = _parse_card(p)
-            if card.card_no is not None and int(card.card_no) > max_no:
-                max_no = int(card.card_no)
-        return max_no
+        results = res["results"]
+        if not results:
+            return 0
+        return int(_parse_card(results[0]).card_no or 0)
 
     def find_stale_in_progress(self, threshold_minutes: int) -> list[Card]:
         res = self.client.databases.query(
