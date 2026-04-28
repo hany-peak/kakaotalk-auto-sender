@@ -1,0 +1,33 @@
+[project]
+name = "movie-shorts-worker"
+version = "0.1.0"
+description = "Local menubar worker that auto-downloads videos from Notion queue and uploads to Google Drive"
+requires-python = ">=3.11"
+dependencies = [
+    "rumps>=0.4.0",
+    "yt-dlp>=2025.1.1",
+    "google-api-python-client>=2.150.0",
+    "google-auth>=2.35.0",
+    "google-auth-oauthlib>=1.2.0",
+    "notion-client>=2.3.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
+]
+
+[project.scripts]
+movie-shorts-worker = "movie_shorts_worker.menubar:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["movie_shorts_worker"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
