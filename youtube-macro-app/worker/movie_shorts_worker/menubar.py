@@ -2,6 +2,7 @@ import subprocess
 import threading
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import rumps
 from notion_client import Client as NotionClient
@@ -23,9 +24,11 @@ class MovieShortsApp(rumps.App):
         notion = NotionWrapper(client=notion_raw, db_id=self.cfg.notion_db_id)
         drive = DriveClient(token_path=self.cfg.google_token_path)
         self.poller = Poller(notion=notion, drive=drive, config=self.cfg, logger=self.log)
-        self.poller.on_status(self._on_status)
+        self.poller.on_status(self._on_status_from_thread)
 
-        # Menu items (rumps mutates these by reference)
+        self._pending_status: Optional[StatusReport] = None
+        self._status_lock = threading.Lock()
+
         self.status_item = rumps.MenuItem("상태: 시작 중…")
         self.last_run_item = rumps.MenuItem("마지막 실행: -")
         self.pause_item = rumps.MenuItem("폴링 일시정지", callback=self._toggle_pause)
@@ -37,6 +40,9 @@ class MovieShortsApp(rumps.App):
             self.pause_item,
             rumps.MenuItem("종료", callback=self._quit),
         ]
+        # Drain status updates on the main loop (every 1s).
+        rumps.Timer(self._drain_status, 1.0).start()
+
         self._thread = threading.Thread(target=self._run_poller, daemon=True)
         self._thread.start()
 
@@ -47,7 +53,18 @@ class MovieShortsApp(rumps.App):
             self.log.exception("poller crashed: %s", e)
             notify("Movie Shorts Worker", f"워커 크래시: {e}")
 
-    def _on_status(self, report: StatusReport):
+    def _on_status_from_thread(self, report: StatusReport):
+        # Called from the poller's daemon thread. DO NOT touch UI here.
+        with self._status_lock:
+            self._pending_status = report
+
+    def _drain_status(self, _):
+        # Runs on the main loop (rumps.Timer). Safe to mutate UI.
+        with self._status_lock:
+            report = self._pending_status
+            self._pending_status = None
+        if report is None:
+            return
         if report.state == "idle":
             self.title = "🎬"
             self.status_item.title = "상태: 대기 중"
@@ -61,7 +78,7 @@ class MovieShortsApp(rumps.App):
             notify("Movie Shorts Worker", report.message)
 
     def _toggle_pause(self, sender):
-        if self.poller._paused:
+        if self.poller.is_paused():
             self.poller.resume()
             sender.title = "폴링 일시정지"
         else:

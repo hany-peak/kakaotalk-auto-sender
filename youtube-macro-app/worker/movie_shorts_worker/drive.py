@@ -17,17 +17,23 @@ class DriveItem:
 
 
 def load_credentials(token_path: Path) -> Credentials:
-    """Load Drive credentials from a token file. Refresh if expired."""
+    """Load Drive credentials from a token file. Refresh if expired.
+    Enforces chmod 600 on the token file."""
     if not token_path.exists():
         raise FileNotFoundError(
             f"Drive token not found at {token_path}. "
             "Run scripts/oauth_setup.py first."
         )
+    # Enforce restrictive permissions on the token file.
+    mode = token_path.stat().st_mode & 0o777
+    if mode & 0o077:
+        token_path.chmod(0o600)
     creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
     if not creds.valid:
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
             token_path.write_text(creds.to_json())
+            token_path.chmod(0o600)
         else:
             raise RuntimeError("Drive credentials invalid and unrefreshable")
     return creds
@@ -38,7 +44,8 @@ class DriveClient:
         if service is not None:
             self.service = service
         else:
-            assert token_path is not None
+            if token_path is None:
+                raise ValueError("DriveClient requires either service= or token_path=")
             creds = load_credentials(token_path)
             self.service = build("drive", "v3", credentials=creds, cache_discovery=False)
 

@@ -1,4 +1,5 @@
 import re
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,8 +34,9 @@ class Poller:
         self.cfg = config
         self.log = logger
         self._status_cb: Optional[Callable[[StatusReport], None]] = None
-        self._paused = False
-        self._stopped = False
+        self._stop = threading.Event()
+        self._unpaused = threading.Event()
+        self._unpaused.set()           # not paused initially
         self._root_folder_id: Optional[str] = None
 
     # ---------- public API ----------
@@ -43,33 +45,43 @@ class Poller:
         self._status_cb = cb
 
     def pause(self) -> None:
-        self._paused = True
+        self._unpaused.clear()
 
     def resume(self) -> None:
-        self._paused = False
+        self._unpaused.set()
 
     def stop(self) -> None:
-        self._stopped = True
+        self._stop.set()
+
+    def is_paused(self) -> bool:
+        return not self._unpaused.is_set()
+
+    def is_stopped(self) -> bool:
+        return self._stop.is_set()
 
     def run_forever(self) -> None:
         self.recover_stale()
-        while not self._stopped:
-            if self._paused:
-                time.sleep(self.cfg.poll_interval_sec)
+        while not self._stop.is_set():
+            # Block here while paused; this also lets stop() interrupt us.
+            if not self._unpaused.is_set():
+                if self._stop.wait(timeout=self.cfg.poll_interval_sec):
+                    return
                 continue
             try:
                 cards = self.notion.query_pending()
             except Exception as e:
                 self.log.exception("notion query failed: %s", e)
                 self._report("error", f"poll error: {e}")
-                time.sleep(self.cfg.poll_interval_sec)
+                if self._stop.wait(timeout=self.cfg.poll_interval_sec):
+                    return
                 continue
             if not cards:
                 self._report("idle", "")
-                time.sleep(self.cfg.poll_interval_sec)
+                if self._stop.wait(timeout=self.cfg.poll_interval_sec):
+                    return
                 continue
             for i, card in enumerate(cards, start=1):
-                if self._stopped or self._paused:
+                if self._stop.is_set() or not self._unpaused.is_set():
                     break
                 self._report("working", f"{i}/{len(cards)} {card.title or card.source_url}")
                 self.process_one_card(card)

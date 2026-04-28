@@ -56,3 +56,8 @@ def test_set_link_share_viewer(mocker):
     svc.permissions.return_value.create.assert_called_once()
     body = svc.permissions.return_value.create.call_args.kwargs["body"]
     assert body == {"type": "anyone", "role": "reader"}
+
+
+def test_drive_client_raises_when_no_args():
+    with pytest.raises(ValueError, match="service|token_path"):
+        DriveClient()

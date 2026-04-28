@@ -189,6 +189,16 @@ def test_process_card_cleans_up_temp_on_drive_failure(deps, mocker, tmp_path: Pa
     assert not card_dir.exists()
 
 
+def test_is_paused_starts_false_then_toggles(deps):
+    notion, drive, cfg, logger = deps
+    p = Poller(notion=notion, drive=drive, config=cfg, logger=logger)
+    assert p.is_paused() is False
+    p.pause()
+    assert p.is_paused() is True
+    p.resume()
+    assert p.is_paused() is False
+
+
 def test_handle_failure_swallows_notion_outage(deps, mocker):
     """If notion.update inside _handle_failure raises, the worker logs and continues — does not propagate."""
     notion, drive, cfg, logger = deps
